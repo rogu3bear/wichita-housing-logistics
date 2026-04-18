@@ -151,9 +151,31 @@ fi
 
 if [ "${1:-}" = "--revoke-all" ]; then
   log "revoking every tracked child"
-  while read -r id; do revoke_child "$id"; done \
-    < <(jq -r '.children[].id' "$STATE_FILE")
-  jq '.children = []' "$STATE_FILE" > "$STATE_FILE.tmp" && mv "$STATE_FILE.tmp" "$STATE_FILE"
+  failed=()
+  revoked=()
+  while read -r id; do
+    [ -z "$id" ] && continue
+    resp="$(curl -sS -X DELETE "${AUTH_MINTER[@]}" "$API/accounts/$ACCT/tokens/$id")"
+    if echo "$resp" | jq -e '.success == true' >/dev/null; then
+      log "revoked $id"
+      revoked+=("$id")
+    else
+      log "revoke failed for $id: $(echo "$resp" | jq -c '.errors')"
+      failed+=("$id")
+    fi
+  done < <(jq -r '.children[].id' "$STATE_FILE")
+
+  # Only drop successfully-revoked children from state. Anything that
+  # failed (network blip, API 5xx, permission change) stays tracked so
+  # a retry can target it.
+  jq --argjson ok "$(printf '%s\n' "${revoked[@]}" | jq -R . | jq -s .)" '
+    .children = ((.children // []) | map(select([.id] | inside($ok) | not)))
+  ' "$STATE_FILE" > "$STATE_FILE.tmp" && mv "$STATE_FILE.tmp" "$STATE_FILE"
+
+  if [ "${#failed[@]}" -gt 0 ]; then
+    log "partial failure — ${#failed[@]} children left tracked: ${failed[*]}"
+    exit 1
+  fi
   log "done"
   exit 0
 fi
