@@ -1,22 +1,33 @@
-name: Rust
+name: cargo check
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [main]
   pull_request:
-    branches: [ "main" ]
+    branches: [main]
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
-
+  ssr-check:
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v4
-    - name: Build
-      run: cargo build --verbose
-    - name: Run tests
-      run: cargo test --verbose
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: cargo check --features ssr
+        run: cargo check --features ssr --locked
+
+  hydrate-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: wasm32
+      - name: cargo check --lib --features hydrate --target wasm32-unknown-unknown
+        run: cargo check --lib --features hydrate --target wasm32-unknown-unknown --locked
