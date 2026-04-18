@@ -4,13 +4,7 @@ use crate::api::{
     ActivityNote, DashboardSnapshot, PlacementStatusCounts, ResourceStatusCounts, StageCounts,
 };
 
-use super::{d1_error, database, AppError, AppResult};
-
-#[derive(Debug, Deserialize)]
-struct GroupCountRow {
-    key: String,
-    n: u32,
-}
+use super::{d1_error, database, AppError, AppResult, GroupCountRow};
 
 #[derive(Debug, Deserialize)]
 struct ActivityRow {

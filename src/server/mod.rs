@@ -8,6 +8,15 @@ pub mod state;
 pub use state::AppState;
 
 use leptos::prelude::ServerFnError;
+use serde::Deserialize;
+
+/// Shared shape for `SELECT <column> AS key, COUNT(*) AS n … GROUP BY <column>`
+/// aggregates the entity modules use to build stage/status counts.
+#[derive(Debug, Deserialize)]
+pub(crate) struct GroupCountRow {
+    pub key: String,
+    pub n: u32,
+}
 
 pub type AppResult<T> = Result<T, AppError>;
 
