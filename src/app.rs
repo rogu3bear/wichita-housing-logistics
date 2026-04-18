@@ -7,7 +7,7 @@ use leptos_router::{
 
 use crate::components::{
     activity_page::ActivityPage, dashboard_page::DashboardPage, households_page::HouseholdsPage,
-    inventory_page::InventoryPage, placements_page::PlacementsPage,
+    inventory_page::InventoryPage, layout::BuildFooter, placements_page::PlacementsPage,
 };
 
 #[allow(dead_code)]
@@ -50,6 +50,7 @@ pub fn App() -> impl IntoView {
                 <Route path=StaticSegment("placements") view=PlacementsPage/>
                 <Route path=StaticSegment("activity") view=ActivityPage/>
             </Routes>
+            <BuildFooter/>
         </Router>
     }
 }

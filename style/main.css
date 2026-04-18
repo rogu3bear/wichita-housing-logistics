@@ -388,6 +388,33 @@ button.secondary:hover:not(:disabled) {
   color: var(--ink-soft);
 }
 
+.build-footer {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 18px 20px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  color: var(--ink-muted);
+  font-size: 0.8rem;
+}
+
+.build-id {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  letter-spacing: 0.01em;
+}
+
+.build-feedback {
+  color: var(--ink-soft);
+  text-decoration: none;
+  border-bottom: 1px dotted currentColor;
+}
+
+.build-feedback:hover {
+  color: var(--accent-deep);
+}
+
 @media (max-width: 700px) {
   .page-shell { padding: 20px 14px 48px; }
   .topnav-inner { padding: 10px 14px; }

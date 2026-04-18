@@ -41,6 +41,24 @@ pub fn ErrorBanner(message: String) -> impl IntoView {
     }
 }
 
+#[component]
+pub fn BuildFooter() -> impl IntoView {
+    let version = crate::build_info::VERSION;
+    let sha = crate::build_info::COMMIT_SHA;
+    let feedback = crate::build_info::FEEDBACK_URL;
+
+    view! {
+        <footer class="build-footer">
+            <span class="build-id">
+                "v" {version} " · " {sha}
+            </span>
+            <a class="build-feedback" href=feedback target="_blank" rel="noopener">
+                "Report an issue"
+            </a>
+        </footer>
+    }
+}
+
 pub fn humanize(value: &str) -> String {
     value
         .split('_')

@@ -1,6 +1,7 @@
 mod api;
 mod app;
 mod asset_hashes;
+mod build_info;
 mod components;
 #[cfg(feature = "ssr")]
 mod server;
