@@ -140,7 +140,7 @@ fn CasePlacementCard(placement: CasePlacement) -> impl IntoView {
         _ => "Your current placement",
     };
     let pill_class = format!("pill pill--{status}");
-    let humanized = humanize_status(&status);
+    let humanized = crate::components::layout::humanize(&status);
 
     view! {
         <section class="case-panel case-panel--highlight">
@@ -330,19 +330,6 @@ fn plain_language(stage: &str) -> StageCopy {
             headline: "Your case is active.",
             body: "Your case manager will update this page as things move.",
         },
-    }
-}
-
-fn humanize_status(value: &str) -> String {
-    match value {
-        "moved_in" => "Moved in".to_string(),
-        other => {
-            let mut chars = other.chars();
-            match chars.next() {
-                Some(c) => c.to_uppercase().collect::<String>() + chars.as_str(),
-                None => String::new(),
-            }
-        }
     }
 }
 

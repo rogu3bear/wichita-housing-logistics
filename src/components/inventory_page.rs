@@ -4,7 +4,7 @@ use crate::api::{
     list_resources, CreateResource, HousingResource, ResourcesResponse, SetResourceStatus,
 };
 use crate::components::layout::{
-    humanize, status_pill_class, EmptyState, ErrorBanner, PageHeader, TopNav,
+    humanize, status_pill_class, EmptyState, ErrorBanner, PageHeader, RequiredMark, TopNav,
 };
 
 const KINDS: &[&str] = &[
@@ -88,7 +88,7 @@ pub fn InventoryPage() -> impl IntoView {
             <section class="panel">
                 <form class="form-grid" on:submit=on_submit>
                     <div class="form-row form-row--span-8">
-                        <label for="rs-label">"Label"</label>
+                        <label for="rs-label">"Label"<RequiredMark/></label>
                         <input id="rs-label" type="text" required
                             placeholder="e.g. Harry St Shelter — Bed 12"
                             prop:value=move || label.get()
@@ -231,8 +231,10 @@ fn InventoryRow(
     view! {
         <tr class=row_class>
             <td>
-                <div class="strong">{label}</div>
-                <div class="id-chip">"#"{id}</div>
+                <div class="cell-title">
+                    <span class="strong">{label}</span>
+                    <span class="id-chip">"#"{id}</span>
+                </div>
             </td>
             <td class="muted">{humanize(&kind)}</td>
             <td>{capacity}</td>

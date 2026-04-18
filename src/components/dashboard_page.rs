@@ -62,7 +62,7 @@ fn DashboardBoard(data: DashboardSnapshot) -> impl IntoView {
                 <PipelineCard label="Intake" value=households.intake pct=p_intake/>
                 <PipelineCard label="Assessment" value=households.assessment pct=p_assess/>
                 <PipelineCard label="Placement" value=households.placement pct=p_place/>
-                <PipelineCard label="Follow-up" value=households.follow_up pct=p_follow/>
+                <PipelineCard label="Follow up" value=households.follow_up pct=p_follow/>
             </div>
         </section>
 
@@ -126,7 +126,7 @@ fn DashboardBoard(data: DashboardSnapshot) -> impl IntoView {
                                         <time>{note.created_at.clone()}</time>
                                     </div>
                                     <p class="activity-body">{note.body.clone()}</p>
-                                    <p class="activity-author">{"— "}{note.author.clone()}</p>
+                                    <p class="activity-author">{"— "}{humanize(&note.author)}</p>
                                 </li>
                             }
                         }).collect::<Vec<_>>()}

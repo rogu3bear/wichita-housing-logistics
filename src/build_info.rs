@@ -10,18 +10,6 @@
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
-/// Stress-mode flag. When true, the TopNav renders a red `<SitrepBanner/>`
-/// above the page shell with jump buttons to `/situational` and `/routing`.
-/// Operators flip this and redeploy during an active multi-event crisis
-/// (severe-weather shelter surge, major intake outage, etc.). Default off
-/// so ordinary days stay calm.
-pub const SITREP_ACTIVE: bool = false;
-
-/// One-line summary rendered in the banner when `SITREP_ACTIVE` is true.
-/// Update at the same time as the flag — the message is the whole point.
-pub const SITREP_SUMMARY: &str =
-    "Red Cross activation · Open Door offline · CrossRoads 1/12 beds";
-
 pub const COMMIT_SHA: &str = match option_env!("GIT_COMMIT_SHA") {
     Some(sha) => sha,
     None => "unknown",

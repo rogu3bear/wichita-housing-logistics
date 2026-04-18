@@ -5,7 +5,7 @@ use crate::api::{
     SetHouseholdStage,
 };
 use crate::components::layout::{
-    humanize, status_pill_class, EmptyState, ErrorBanner, PageHeader, TopNav,
+    humanize, status_pill_class, EmptyState, ErrorBanner, PageHeader, RequiredMark, TopNav,
 };
 
 const STAGES: &[&str] = &["intake", "assessment", "placement", "follow_up", "exited"];
@@ -145,7 +145,7 @@ pub fn HouseholdsPage() -> impl IntoView {
             <section class="panel">
                 <form class="form-grid" on:submit=on_submit>
                     <div class="form-row form-row--span-8">
-                        <label for="hh-name">"Head of household"</label>
+                        <label for="hh-name">"Head of household"<RequiredMark/></label>
                         <input id="hh-name" type="text" required placeholder="First Last"
                             prop:value=move || head_name.get()
                             on:input=move |ev| head_name.set(event_target_value(&ev))/>
@@ -157,7 +157,7 @@ pub fn HouseholdsPage() -> impl IntoView {
                             on:input=move |ev| {
                                 household_size.set(event_target_value(&ev).parse().unwrap_or(1));
                             }/>
-                        <p class="form-hint">"Include every person at the address."</p>
+                        <p class="form-hint">"Count everyone who will live at this address."</p>
                     </div>
                     <div class="form-row form-row--span-6">
                         <label for="hh-phone">"Phone"</label>
@@ -296,8 +296,10 @@ fn HouseholdRow(
     view! {
         <tr class=row_class>
             <td>
-                <div class="strong">{head_name}</div>
-                <div class="id-chip">"#"{id}</div>
+                <div class="cell-title">
+                    <span class="strong">{head_name}</span>
+                    <span class="id-chip">"#"{id}</span>
+                </div>
                 {intake_notes.map(|note| view! {
                     <div class="cell-note">{note}</div>
                 })}

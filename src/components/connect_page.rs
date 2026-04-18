@@ -1,7 +1,7 @@
 use leptos::{ev::SubmitEvent, prelude::*};
 
 use crate::api::{list_activity, ActivityNote, CreateNote};
-use crate::components::layout::{ErrorBanner, PageHeader, TopNav};
+use crate::components::layout::{ErrorBanner, PageHeader, RequiredMark, TopNav};
 
 /// Connect — two lanes for reaching people.
 ///
@@ -96,13 +96,13 @@ pub fn ConnectPage() -> impl IntoView {
                 </div>
                 <form class="form-grid" on:submit=on_submit>
                     <div class="form-row">
-                        <label for="cn-author">"Your name"</label>
+                        <label for="cn-author">"Your name"<RequiredMark/></label>
                         <input id="cn-author" type="text" required placeholder="case_manager_kim"
                             prop:value=move || author.get()
                             on:input=move |ev| author.set(event_target_value(&ev))/>
                     </div>
                     <div class="form-row form-row--wide">
-                        <label for="cn-body">"Message"</label>
+                        <label for="cn-body">"Message"<RequiredMark/></label>
                         <textarea id="cn-body" rows="3" required
                             placeholder="e.g. Union Rescue Mission intake is paused until Monday — route men-only referrals to Koch Center."
                             prop:value=move || body.get()

@@ -27,18 +27,29 @@ pub fn TopNav() -> impl IntoView {
     }
 }
 
-/// Red banner below the top nav during a declared stress event. Only
-/// renders when `build_info::SITREP_ACTIVE` is true — operators flip
-/// the constant + redeploy when a multi-event crisis is in progress.
-/// Static during a single build (no server state, no polling).
+/// Red/amber banner below the top nav during a declared stress event.
+/// Reads live D1 state via `get_sitrep` — ops flip `active` in the
+/// `/situational` control panel and the banner appears for everyone
+/// without a redeploy.
 #[component]
 pub fn SitrepBanner() -> impl IntoView {
-    if !crate::build_info::SITREP_ACTIVE {
-        return view! { <></> }.into_any();
-    }
-    let summary = crate::build_info::SITREP_SUMMARY;
+    let sitrep = Resource::new(|| (), |_| async move { crate::api::get_sitrep().await });
+
     view! {
-        <aside class="sitrep sitrep--red" role="status" aria-live="polite">
+        <Suspense fallback=|| ()>
+            {move || sitrep.get().and_then(|res| match res {
+                Ok(s) if s.active => Some(view! { <SitrepBar summary=s.summary level=s.level/> }),
+                _ => None,
+            })}
+        </Suspense>
+    }
+}
+
+#[component]
+fn SitrepBar(summary: String, level: String) -> impl IntoView {
+    let class = if level == "red" { "sitrep sitrep--red" } else { "sitrep" };
+    view! {
+        <aside class=class role="status" aria-live="polite">
             <div class="sitrep-inner">
                 <span class="sitrep-tag">"SITREP"</span>
                 <div class="sitrep-title">
@@ -51,7 +62,7 @@ pub fn SitrepBanner() -> impl IntoView {
                 </div>
             </div>
         </aside>
-    }.into_any()
+    }
 }
 
 #[component]
@@ -122,16 +133,27 @@ pub fn status_pill_class(token: &str) -> String {
     format!("pill pill--{token}")
 }
 
+/// Sentence-case the first letter and turn underscores into spaces.
+/// `"moved_in"` → `"Moved in"`, `"follow_up"` → `"Follow up"`,
+/// `"system"` → `"System"`. Title-casing every word (the old behavior)
+/// produced "Moved In" in some places and "Moved in" in others —
+/// sentence case gives us one rule everywhere.
 pub fn humanize(value: &str) -> String {
-    value
-        .split('_')
-        .map(|part| {
-            let mut chars = part.chars();
-            match chars.next() {
-                Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
-                None => String::new(),
-            }
-        })
-        .collect::<Vec<_>>()
-        .join(" ")
+    let spaced = value.replace('_', " ");
+    let mut chars = spaced.chars();
+    match chars.next() {
+        Some(first) => first.to_uppercase().chain(chars).collect(),
+        None => String::new(),
+    }
 }
+
+/// Inline "*" marker for required form labels. `aria-hidden` so screen
+/// readers don't announce "asterisk"; the `required` attribute on the
+/// input already conveys the semantic requirement.
+#[component]
+pub fn RequiredMark() -> impl IntoView {
+    view! {
+        <span class="required-mark" aria-hidden="true">"*"</span>
+    }
+}
+
