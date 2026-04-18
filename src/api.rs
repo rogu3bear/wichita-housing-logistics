@@ -119,6 +119,7 @@ pub struct DashboardSnapshot {
 // Each #[server] wraps the SSR-only query layer inside a SendWrapper because
 // Leptos server fns require Send but worker::Env is !Send on Workers.
 
+#[allow(unused_macros)]
 macro_rules! ssr_call {
     ($body:expr) => {{
         #[cfg(feature = "ssr")]
