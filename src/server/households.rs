@@ -259,13 +259,47 @@ struct CaseUpdateRow {
 
 fn normalize_share_token(token: &str) -> AppResult<String> {
     let trimmed = token.trim().to_ascii_lowercase();
-    if trimmed.len() < 8 || trimmed.len() > 64 {
+    // Tokens are exactly 24 lowercase hex chars (12 random bytes). Anything
+    // outside that shape can't be ours and doesn't need a lookup — reject
+    // before hitting D1 so probes don't burn subrequests.
+    if trimmed.len() != 24 {
         return Err(AppError::client("Invalid case link."));
     }
     if !trimmed.chars().all(|c| c.is_ascii_hexdigit()) {
         return Err(AppError::client("Invalid case link."));
     }
     Ok(trimmed)
+}
+
+/// Admin-side: generate a fresh share token for a household. Old token
+/// stops working immediately. Returns the new token so the admin UI can
+/// copy it to clipboard.
+pub async fn rotate_share_token(id: i64) -> AppResult<String> {
+    let db = database()?;
+    let id_arg = row_id_arg(id)?;
+
+    let result = db
+        .prepare(
+            "UPDATE households
+             SET share_token = lower(hex(randomblob(12))),
+                 updated_at = CURRENT_TIMESTAMP
+             WHERE id = ?1
+             RETURNING share_token",
+        )
+        .bind_refs(&id_arg)
+        .map_err(|e| d1_error("Failed to bind share_token rotate.", e))?
+        .first::<ShareTokenRow>(None)
+        .await
+        .map_err(|e| d1_error("Failed to rotate share_token.", e))?;
+
+    result
+        .map(|r| r.share_token)
+        .ok_or_else(|| AppError::client(format!("Household {id} was not found.")))
+}
+
+#[derive(Debug, Deserialize)]
+struct ShareTokenRow {
+    share_token: String,
 }
 
 pub async fn case_view(token: String) -> AppResult<CaseView> {

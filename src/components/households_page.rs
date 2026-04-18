@@ -1,13 +1,76 @@
 use leptos::{ev::SubmitEvent, prelude::*};
 
 use crate::api::{
-    list_households, CreateHousehold, Household, HouseholdsResponse, SetHouseholdStage,
+    list_households, CreateHousehold, Household, HouseholdsResponse, RotateShareToken,
+    SetHouseholdStage,
 };
 use crate::components::layout::{
     humanize, status_pill_class, EmptyState, ErrorBanner, PageHeader, TopNav,
 };
 
 const STAGES: &[&str] = &["intake", "assessment", "placement", "follow_up", "exited"];
+
+/// Admin-side share-link chip: short id + copy + rotate. The raw anchor
+/// lets right-click-copy-link work; the copy button handles phones where
+/// right-click doesn't exist; the rotate button invalidates a compromised
+/// link and surfaces the new one.
+#[component]
+fn ShareLinkCell(hh_id: i64, initial_token: Option<String>) -> impl IntoView {
+    let token = RwSignal::new(initial_token);
+    let rotate_action = ServerAction::<RotateShareToken>::new();
+
+    Effect::new(move |_| {
+        if let Some(Ok(fresh)) = rotate_action.value().get() {
+            token.set(Some(fresh));
+        }
+    });
+
+    let on_copy = move |_| {
+        let Some(current) = token.get_untracked() else {
+            return;
+        };
+        let origin = leptos::web_sys::window()
+            .map(|w| w.location().origin().unwrap_or_default())
+            .unwrap_or_default();
+        let url = format!("{origin}/case/{current}");
+        if let Some(clipboard) = leptos::web_sys::window().map(|w| w.navigator().clipboard()) {
+            let _ = clipboard.write_text(&url);
+        }
+    };
+
+    let on_rotate = move |_| {
+        rotate_action.dispatch(RotateShareToken { id: hh_id });
+    };
+
+    view! {
+        <div class="share-cell">
+            {move || token.get().map(|t| {
+                let href = format!("/case/{t}");
+                let short = t.chars().take(8).collect::<String>();
+                view! {
+                    <a class="share-copy mono small"
+                       href=href.clone()
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       title=format!("Open {href}")>
+                        {short}
+                    </a>
+                }
+            })}
+            <button type="button" class="ghost compact"
+                on:click=on_copy
+                title="Copy the full /case/<token> URL to clipboard">
+                "Copy"
+            </button>
+            <button type="button" class="ghost compact"
+                on:click=on_rotate
+                disabled=move || rotate_action.pending().get()
+                title="Generate a fresh link. The old one stops working.">
+                {move || if rotate_action.pending().get() { "…" } else { "New" }}
+            </button>
+        </div>
+    }
+}
 
 #[component]
 pub fn HouseholdsPage() -> impl IntoView {
@@ -244,19 +307,7 @@ fn HouseholdRow(
                 <span class=pill_class>{stage_label}</span>
             </td>
             <td>
-                {share_token.map(|token| {
-                    let href = format!("/case/{token}");
-                    let short = token.chars().take(8).collect::<String>();
-                    view! {
-                        <a class="share-copy mono small"
-                           href=href.clone()
-                           target="_blank"
-                           rel="noopener"
-                           title=format!("Open {href} — share this URL with the household")>
-                            {short}
-                        </a>
-                    }
-                })}
+                <ShareLinkCell hh_id=id initial_token=share_token/>
             </td>
             <td class="muted mono small">{updated_at}</td>
             <td class="row-actions">

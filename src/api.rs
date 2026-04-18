@@ -214,6 +214,11 @@ pub async fn submit_household_update(
     ssr_call!(crate::server::households::submit_household_update(token, body).await)
 }
 
+#[server(RotateShareToken)]
+pub async fn rotate_share_token(id: i64) -> Result<String, ServerFnError> {
+    ssr_call!(crate::server::households::rotate_share_token(id).await)
+}
+
 #[server(ListResources)]
 pub async fn list_resources() -> Result<ResourcesResponse, ServerFnError> {
     ssr_call!(crate::server::resources::list_resources().await)
@@ -292,6 +297,7 @@ pub fn register_all() {
     register_explicit::<SetHouseholdStage>();
     register_explicit::<CaseViewFn>();
     register_explicit::<SubmitHouseholdUpdate>();
+    register_explicit::<RotateShareToken>();
     register_explicit::<ListResources>();
     register_explicit::<CreateResource>();
     register_explicit::<SetResourceStatus>();

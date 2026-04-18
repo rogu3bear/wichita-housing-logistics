@@ -1005,6 +1005,12 @@ select[data-status="cancelled"] { border-left-color: var(--rail-danger); }
 .case-footer { padding: var(--sp-3) 0; }
 .case-footer p { margin: 0; }
 
+.share-cell {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
 .share-copy {
   padding: 3px 8px;
   font-family: var(--font-mono);
@@ -1014,8 +1020,14 @@ select[data-status="cancelled"] { border-left-color: var(--rail-danger); }
   border-radius: var(--radius-xs);
   cursor: pointer;
   color: var(--ink-soft);
+  text-decoration: none;
 }
 .share-copy:hover { border-color: var(--accent); color: var(--accent-deep); }
+.share-cell button.compact {
+  min-height: 26px;
+  padding: 0 8px;
+  font-size: 0.78rem;
+}
 
 .build-footer {
   max-width: var(--max-width);
