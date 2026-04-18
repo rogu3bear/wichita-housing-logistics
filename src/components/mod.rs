@@ -1,4 +1,5 @@
 pub mod activity_page;
+pub mod case_page;
 pub mod connect_page;
 pub mod dashboard_page;
 pub mod households_page;

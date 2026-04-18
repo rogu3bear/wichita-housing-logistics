@@ -2,13 +2,14 @@ use leptos::prelude::*;
 use leptos_meta::{provide_meta_context, Meta, MetaTags, Title};
 use leptos_router::{
     components::{Route, Router, Routes},
-    StaticSegment,
+    ParamSegment, StaticSegment,
 };
 
 use crate::components::{
-    activity_page::ActivityPage, connect_page::ConnectPage, dashboard_page::DashboardPage,
-    households_page::HouseholdsPage, inventory_page::InventoryPage, layout::BuildFooter,
-    placements_page::PlacementsPage, reference_page::ReferencePage, resources_page::ResourcesPage,
+    activity_page::ActivityPage, case_page::CasePage, connect_page::ConnectPage,
+    dashboard_page::DashboardPage, households_page::HouseholdsPage,
+    inventory_page::InventoryPage, layout::BuildFooter, placements_page::PlacementsPage,
+    reference_page::ReferencePage, resources_page::ResourcesPage,
 };
 
 #[allow(dead_code)]
@@ -53,6 +54,7 @@ pub fn App() -> impl IntoView {
                 <Route path=StaticSegment("resources") view=ResourcesPage/>
                 <Route path=StaticSegment("reference") view=ReferencePage/>
                 <Route path=StaticSegment("connect") view=ConnectPage/>
+                <Route path=(StaticSegment("case"), ParamSegment("token")) view=CasePage/>
             </Routes>
             <BuildFooter/>
         </Router>

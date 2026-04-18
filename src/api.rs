@@ -13,8 +13,42 @@ pub struct Household {
     /// One of: intake | assessment | placement | follow_up | exited
     pub stage: String,
     pub intake_notes: Option<String>,
+    /// 24-char hex, unguessable. Pair with `/case/{share_token}` to share a
+    /// customer-facing case page. `None` on legacy rows pre-migration.
+    pub share_token: Option<String>,
     pub created_at: String,
     pub updated_at: String,
+}
+
+/// Customer-facing view of a single household. Stripped of audit fields,
+/// ids, and cross-household context — only what the household themselves
+/// should see on `/case/{share_token}`.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct CaseView {
+    pub head_name: String,
+    pub household_size: i64,
+    /// Same vocabulary as `Household::stage`; UI translates to plain language.
+    pub stage: String,
+    pub intake_notes: Option<String>,
+    pub current_placement: Option<CasePlacement>,
+    pub recent_updates: Vec<CaseUpdate>,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct CasePlacement {
+    pub resource_label: String,
+    /// proposed | confirmed | moved_in | exited | cancelled
+    pub status: String,
+    pub started_at: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct CaseUpdate {
+    pub body: String,
+    /// true when the household posted this themselves via the /case page.
+    pub author_is_household: bool,
+    pub created_at: String,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
@@ -165,6 +199,19 @@ pub async fn create_household(
 #[server(SetHouseholdStage)]
 pub async fn set_household_stage(id: i64, stage: String) -> Result<Household, ServerFnError> {
     ssr_call!(crate::server::households::set_stage(id, stage).await)
+}
+
+#[server(CaseViewFn)]
+pub async fn case_view(token: String) -> Result<CaseView, ServerFnError> {
+    ssr_call!(crate::server::households::case_view(token).await)
+}
+
+#[server(SubmitHouseholdUpdate)]
+pub async fn submit_household_update(
+    token: String,
+    body: String,
+) -> Result<(), ServerFnError> {
+    ssr_call!(crate::server::households::submit_household_update(token, body).await)
 }
 
 #[server(ListResources)]
