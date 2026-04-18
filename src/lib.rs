@@ -65,6 +65,10 @@ async fn fetch(
         .with_state(state);
 
     let method = req.method().clone();
+    // Capture the path before consuming `req`. /case/* responses need
+    // tighter Referrer-Policy + no-index headers so the share token
+    // doesn't leak to any external link the household clicks.
+    let is_case_path = req.uri().path().starts_with("/case/");
     let mut response = router.call(req).await?;
     let headers = response.headers_mut();
 
@@ -79,10 +83,23 @@ async fn fetch(
     };
     headers.insert(CACHE_CONTROL, HeaderValue::from_static(cache_value));
     headers.insert(X_CONTENT_TYPE_OPTIONS, HeaderValue::from_static("nosniff"));
-    headers.insert(
-        REFERRER_POLICY,
-        HeaderValue::from_static("strict-origin-when-cross-origin"),
-    );
+    // Default Referrer-Policy is strict-origin-when-cross-origin; /case/*
+    // pages escalate to no-referrer so the share token never appears in
+    // a Referer header if the household clicks an external link.
+    let referrer_policy = if is_case_path {
+        "no-referrer"
+    } else {
+        "strict-origin-when-cross-origin"
+    };
+    headers.insert(REFERRER_POLICY, HeaderValue::from_static(referrer_policy));
+    if is_case_path {
+        // Stop every major crawler from indexing case pages even if a
+        // share URL gets pasted into a public chat by mistake.
+        headers.insert(
+            HeaderName::from_static("x-robots-tag"),
+            HeaderValue::from_static("noindex, nofollow, noarchive"),
+        );
+    }
 
     // CSP: all resources are self-hosted; WASM needs 'wasm-unsafe-eval' to
     // instantiate; the Leptos hydration bootstrap inlines a <script type=
