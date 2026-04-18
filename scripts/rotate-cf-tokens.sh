@@ -83,20 +83,35 @@ revoke_child() {
 }
 
 # Mint a child and return the new record as JSON: {name,id,value,expires_on,created_at}.
+#
+# Scope resolution:
+#   - Account-scoped (default): resources = {"com.cloudflare.api.account.<acct>": "*"}
+#   - Zone-scoped: pass a zone id as $3; resources = {"com.cloudflare.api.account.zone.<zid>": "*"}
+#     Zone-scoped children cannot touch account-level APIs — they are for zone ops only.
 mint_child() {
-  local name="$1" expires_on="$2"
-  shift 2
+  # Positional contract (always 3 fixed + variadic):
+  #   $1 name   $2 expires_on   $3 zone_id (empty string = account scope)   $4+ perm-group ids
+  local name="$1" expires_on="$2" zone_id="$3"
+  shift 3
   local perm_ids_json
   perm_ids_json="$(printf '%s\n' "$@" | jq -R '{id: .}' | jq -s .)"
 
+  local resources_json
+  if [ -n "$zone_id" ]; then
+    resources_json="$(jq -n --arg zid "$zone_id" '{("com.cloudflare.api.account.zone." + $zid): "*"}')"
+  else
+    resources_json="$(jq -n --arg acct "$ACCT" '{("com.cloudflare.api.account." + $acct): "*"}')"
+  fi
+
   local body
-  body="$(jq -n --arg name "$name" --arg exp "$expires_on" --arg acct "$ACCT" --argjson pgs "$perm_ids_json" '
+  body="$(jq -n --arg name "$name" --arg exp "$expires_on" \
+    --argjson res "$resources_json" --argjson pgs "$perm_ids_json" '
     {
       name: $name,
       policies: [
         {
           effect: "allow",
-          resources: { ("com.cloudflare.api.account." + $acct): "*" },
+          resources: $res,
           permission_groups: $pgs
         }
       ],
@@ -190,10 +205,15 @@ cf_check "$(cat "$STATE_DIR/perm-groups.json")" "permission-groups list"
 PG_ACCOUNT_SETTINGS_READ="$(pg_id 'Account Settings Read')"
 PG_D1_WRITE="$(pg_id 'D1 Write')"
 PG_WORKERS_SCRIPTS_WRITE="$(pg_id 'Workers Scripts Write')"
+PG_DNS_WRITE="$(pg_id 'DNS Write')"
 
 [ -n "$PG_ACCOUNT_SETTINGS_READ" ]   || die "could not resolve 'Account Settings Read' permission-group"
 [ -n "$PG_D1_WRITE" ]                || die "could not resolve 'D1 Write' permission-group"
 [ -n "$PG_WORKERS_SCRIPTS_WRITE" ]   || die "could not resolve 'Workers Scripts Write' permission-group"
+[ -n "$PG_DNS_WRITE" ]               || die "could not resolve 'DNS Write' permission-group"
+
+# Zones this repo operates on. Add more as subdomains/surfaces grow.
+ZONE_JKCA_ME="08e87b3b4b8c0ef0181abfa87499437b"
 
 # Expiry: 90d for worker-deploy, 30d for d1-migrate.
 if date -u -v+90d >/dev/null 2>&1; then
@@ -217,7 +237,24 @@ rotate() {
   fi
   log "minting $name (expires $expires_on)"
   local record value
-  record="$(mint_child "$name" "$expires_on" "$@")"
+  record="$(mint_child "$name" "$expires_on" "" "$@")"
+  value="$(echo "$record" | jq -r .value)"
+  write_env "$name" "$value"
+  persist_child "$record"
+}
+
+# Zone-scoped variant — resource is a single zone id, not the account.
+rotate_zone() {
+  local name="$1" expires_on="$2" zone_id="$3"
+  shift 3
+  local old_id
+  old_id="$(jq -r --arg n "$name" '.children[] | select(.name == $n) | .id' "$STATE_FILE" | head -n1)"
+  if [ -n "$old_id" ] && [ "$old_id" != "null" ]; then
+    revoke_child "$old_id"
+  fi
+  log "minting $name (zone=$zone_id, expires $expires_on)"
+  local record value
+  record="$(mint_child "$name" "$expires_on" "$zone_id" "$@")"
   value="$(echo "$record" | jq -r .value)"
   write_env "$name" "$value"
   persist_child "$record"
@@ -227,7 +264,10 @@ rotate "whl-worker-deploy" "$EXP_90D" \
   "$PG_WORKERS_SCRIPTS_WRITE" "$PG_ACCOUNT_SETTINGS_READ"
 rotate "whl-d1-migrate" "$EXP_30D" \
   "$PG_D1_WRITE" "$PG_ACCOUNT_SETTINGS_READ"
+rotate_zone "whl-dns-manage" "$EXP_90D" "$ZONE_JKCA_ME" \
+  "$PG_DNS_WRITE"
 
 log "rotation complete"
 log "source .cf-tokens.local/whl-worker-deploy.env for deploys"
 log "source .cf-tokens.local/whl-d1-migrate.env   for D1 migrate/create"
+log "source .cf-tokens.local/whl-dns-manage.env   for DNS record management on jkca.me"

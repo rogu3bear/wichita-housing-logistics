@@ -2,6 +2,14 @@ name = "wichita-housing-logistics"
 main = "build/index.js"
 compatibility_date = "2026-04-18"
 
+# Keep the workers.dev URL live alongside the custom domain so SSL/DNS
+# propagation on groover.jkca.me doesn't leave us without a usable URL.
+workers_dev = true
+
+routes = [
+  { pattern = "groover.jkca.me", custom_domain = true }
+]
+
 [build]
 command = "bash ./scripts/build-edge.sh"
 
