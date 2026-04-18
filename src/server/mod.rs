@@ -94,7 +94,7 @@ pub(crate) fn normalize_text(
             Ok(None)
         };
     }
-    if trimmed.len() > max_len {
+    if trimmed.chars().count() > max_len {
         return Err(AppError::client(format!(
             "{label} is capped at {max_len} characters."
         )));

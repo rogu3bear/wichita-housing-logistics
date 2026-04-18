@@ -19,11 +19,11 @@ pub struct Household {
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
 pub struct StageCounts {
-    pub intake: usize,
-    pub assessment: usize,
-    pub placement: usize,
-    pub follow_up: usize,
-    pub exited: usize,
+    pub intake: u32,
+    pub assessment: u32,
+    pub placement: u32,
+    pub follow_up: u32,
+    pub exited: u32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -49,10 +49,10 @@ pub struct HousingResource {
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
 pub struct ResourceStatusCounts {
-    pub available: usize,
-    pub held: usize,
-    pub occupied: usize,
-    pub offline: usize,
+    pub available: u32,
+    pub held: u32,
+    pub occupied: u32,
+    pub offline: u32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -79,11 +79,11 @@ pub struct Placement {
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
 pub struct PlacementStatusCounts {
-    pub proposed: usize,
-    pub confirmed: usize,
-    pub moved_in: usize,
-    pub exited: usize,
-    pub cancelled: usize,
+    pub proposed: u32,
+    pub confirmed: u32,
+    pub moved_in: u32,
+    pub exited: u32,
+    pub cancelled: u32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -106,11 +106,11 @@ pub struct ActivityNote {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct DashboardSnapshot {
     pub households: StageCounts,
-    pub household_total: usize,
+    pub household_total: u32,
     pub resources: ResourceStatusCounts,
-    pub resource_total: usize,
+    pub resource_total: u32,
     pub placements: PlacementStatusCounts,
-    pub placement_total: usize,
+    pub placement_total: u32,
     pub recent_activity: Vec<ActivityNote>,
 }
 

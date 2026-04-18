@@ -51,7 +51,8 @@ pub async fn list_households() -> AppResult<HouseholdsResponse> {
                     strftime('%Y-%m-%d %H:%M UTC', created_at) AS created_at,
                     strftime('%Y-%m-%d %H:%M UTC', updated_at) AS updated_at
              FROM households
-             ORDER BY id DESC",
+             ORDER BY id DESC
+             LIMIT 500",
         )
         .all()
         .await
