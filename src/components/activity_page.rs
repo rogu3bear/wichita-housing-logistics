@@ -1,7 +1,9 @@
 use leptos::{ev::SubmitEvent, prelude::*};
 
 use crate::api::{list_activity, ActivityNote, CreateNote};
-use crate::components::layout::{humanize, ErrorBanner, PageHeader, TopNav};
+use crate::components::layout::{
+    entity_pill_class, humanize, EmptyState, ErrorBanner, PageHeader, TopNav,
+};
 
 const ENTITIES: &[&str] = &["household", "resource", "placement", "system"];
 
@@ -19,8 +21,21 @@ pub fn ActivityPage() -> impl IntoView {
     let body = RwSignal::new(String::new());
     let form_error = RwSignal::new(None::<String>);
 
+    // Rehydrate the operator's saved identity from localStorage on mount.
+    // No-op during SSR — web_sys::window() returns None on the Worker.
+    Effect::new(move |_| {
+        if let Some(saved) = crate::operator::load() {
+            if author.get_untracked().is_empty() {
+                author.set(saved);
+            }
+        }
+    });
+
     Effect::new(move |_| {
         if let Some(Ok(_)) = create_action.value().get() {
+            // Persist whatever author string just succeeded so the next
+            // note pre-fills instead of making the operator retype.
+            crate::operator::save(&author.get_untracked());
             entity_id.set(String::new());
             body.set(String::new());
             form_error.set(None);
@@ -78,7 +93,7 @@ pub fn ActivityPage() -> impl IntoView {
 
             <section class="panel">
                 <form class="form-grid" on:submit=on_submit>
-                    <div class="form-row">
+                    <div class="form-row form-row--span-3">
                         <label for="ac-type">"About"</label>
                         <select id="ac-type"
                             prop:value=move || entity_type.get()
@@ -89,13 +104,13 @@ pub fn ActivityPage() -> impl IntoView {
                             }).collect::<Vec<_>>()}
                         </select>
                     </div>
-                    <div class="form-row">
+                    <div class="form-row form-row--span-3">
                         <label for="ac-id">"Entity id"</label>
                         <input id="ac-id" type="text" placeholder="e.g. 3 (skip for system)"
                             prop:value=move || entity_id.get()
                             on:input=move |ev| entity_id.set(event_target_value(&ev))/>
                     </div>
-                    <div class="form-row">
+                    <div class="form-row form-row--span-6">
                         <label for="ac-author">"Author"</label>
                         <input id="ac-author" type="text" required placeholder="case_manager_kim"
                             prop:value=move || author.get()
@@ -104,6 +119,7 @@ pub fn ActivityPage() -> impl IntoView {
                     <div class="form-row form-row--wide">
                         <label for="ac-body">"Note"</label>
                         <textarea id="ac-body" rows="2" required
+                            placeholder="What happened — be specific and dateable."
                             prop:value=move || body.get()
                             on:input=move |ev| body.set(event_target_value(&ev))/>
                     </div>
@@ -131,23 +147,34 @@ fn ActivityFeed(notes: Vec<ActivityNote>) -> impl IntoView {
         <section class="panel">
             <div class="panel-head">
                 <h2>"Activity feed"</h2>
-                <p class="muted">"Latest 100 entries."</p>
+                <p>"Latest 100 entries."</p>
             </div>
             {if notes.is_empty() {
-                view! { <p class="muted">"No activity yet."</p> }.into_any()
+                view! {
+                    <EmptyState
+                        title="No activity yet"
+                        body="Add a note above — the audit trail is how follow-ups find context six months from now."
+                    />
+                }.into_any()
             } else {
                 view! {
                     <ul class="activity-list">
-                        {notes.into_iter().map(|note| view! {
-                            <li class="activity-row">
-                                <div class="activity-meta">
-                                    <span class="pill">{humanize(&note.entity_type)}</span>
-                                    {note.entity_id.map(|id| view! { <span class="muted">"#"{id}</span> })}
-                                    <time>{note.created_at.clone()}</time>
-                                </div>
-                                <p class="activity-body">{note.body.clone()}</p>
-                                <p class="activity-author muted">{"— "}{note.author.clone()}</p>
-                            </li>
+                        {notes.into_iter().map(|note| {
+                            let pill_class = entity_pill_class(&note.entity_type);
+                            let entity_label = humanize(&note.entity_type);
+                            view! {
+                                <li class="activity-row">
+                                    <div class="activity-meta">
+                                        <span class=pill_class>{entity_label}</span>
+                                        {note.entity_id.map(|id| view! {
+                                            <span class="id-chip">"#"{id}</span>
+                                        })}
+                                        <time>{note.created_at.clone()}</time>
+                                    </div>
+                                    <p class="activity-body">{note.body.clone()}</p>
+                                    <p class="activity-author">{"— "}{note.author.clone()}</p>
+                                </li>
+                            }
                         }).collect::<Vec<_>>()}
                     </ul>
                 }.into_any()

@@ -917,6 +917,96 @@ select[data-status="cancelled"] { border-left-color: var(--rail-danger); }
   .kpi-item + .kpi-item { border-left: 0; padding-left: 0; }
 }
 
+/* =========================================================================
+   Reference page — field data, stress-mode callout, access-cost list
+   ========================================================================= */
+
+.callout {
+  background: var(--warn-soft);
+  border: 1px solid #ead9ac;
+  border-radius: var(--radius-lg);
+  padding: var(--sp-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  color: var(--warn-ink);
+}
+.callout-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.callout-lede { margin: 0; font-size: 0.95rem; }
+.callout-list {
+  margin: 0;
+  padding-left: var(--sp-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  font-size: 0.92rem;
+}
+.callout-list li { line-height: 1.45; }
+
+.ref-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--sp-4);
+}
+.ref-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--bg-panel-muted);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md, 10px);
+}
+.ref-stat-label {
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  letter-spacing: 0.01em;
+}
+.ref-stat-value {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.ref-note { max-width: 48ch; line-height: 1.4; }
+
+.ref-costs {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+.ref-cost {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-bottom: var(--sp-3);
+  border-bottom: 1px solid var(--line);
+}
+.ref-cost:last-child { border-bottom: 0; padding-bottom: 0; }
+.ref-cost-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  margin: 0;
+}
+.ref-cost-value {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--ink);
+}
+.ref-cost-note {
+  margin: 2px 0 0;
+  line-height: 1.45;
+  max-width: 72ch;
+}
+
 @media (max-width: 700px) {
   .page-shell { padding: var(--sp-6) var(--sp-4) var(--sp-8); gap: var(--sp-6); }
   .topnav-inner { padding: 0 var(--sp-4); gap: var(--sp-3); }
@@ -931,4 +1021,6 @@ select[data-status="cancelled"] { border-left-color: var(--rail-danger); }
   .panel { padding: var(--sp-5); }
   .data-table-scroll { max-height: none; }
   .data-table { font-size: 0.88rem; }
+
+  .ref-cost-head { flex-direction: column; align-items: flex-start; }
 }

@@ -1,6 +1,9 @@
 pub mod activity_page;
+pub mod connect_page;
 pub mod dashboard_page;
 pub mod households_page;
 pub mod inventory_page;
 pub mod layout;
 pub mod placements_page;
+pub mod reference_page;
+pub mod resources_page;
