@@ -9,3 +9,4 @@ build
 .dev.vars.*
 .DS_Store
 var/
+.cf-tokens.local/
