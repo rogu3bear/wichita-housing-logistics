@@ -15,19 +15,30 @@ codegen-units = 1
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-axum = { version = "0.8", default-features = false, optional = true }
+# Critical-path crates use tilde pins (~0.x.y → >=0.x.y, <0.(x+1)) so a
+# future `cargo update` on a fresh machine can't silently bump a minor
+# version mid-release cycle. Everything else stays on caret.
+axum = { version = "~0.8", default-features = false, optional = true }
 console_error_panic_hook = { version = "0.1", optional = true }
 getrandom = { version = "0.4", features = ["wasm_js"] }
 getrandom03 = { package = "getrandom", version = "0.3", features = ["wasm_js"] }
-leptos = { version = "0.8" }
-leptos_axum = { version = "0.8.8", default-features = false, features = ["wasm"], optional = true }
-leptos_meta = { version = "0.8" }
-leptos_router = { version = "0.8" }
+leptos = { version = "~0.8" }
+leptos_axum = { version = "~0.8.8", default-features = false, features = ["wasm"], optional = true }
+leptos_meta = { version = "~0.8" }
+leptos_router = { version = "~0.8" }
 send_wrapper = "0.6"
 serde = { version = "1", features = ["derive"] }
 tower-service = "0.3"
-wasm-bindgen = "0.2.105"
-worker = { version = "0.7.5", features = ["http", "axum", "d1"], optional = true }
+# Keep the spec aligned with the lockfile resolution and the 0.2.114 CLI
+# pinned by scripts/bootstrap.sh — mismatched CLI + lib versions are the
+# #1 cause of silent hydration bugs.
+wasm-bindgen = "=0.2.114"
+# web-sys is already a transitive dep via leptos; declare it here only to
+# enable the `Storage` feature so `operator.rs` can persist the author
+# field in `localStorage`. Feature unification merges with leptos's
+# selection — no new crate is introduced, just extra feature flags.
+web-sys = { version = "0.3", features = ["Window", "Storage"] }
+worker = { version = "~0.7.5", features = ["http", "axum", "d1"], optional = true }
 
 [features]
 hydrate = [
