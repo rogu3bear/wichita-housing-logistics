@@ -188,11 +188,12 @@ pub fn HouseholdsPage() -> impl IntoView {
                 </form>
             </section>
 
-            {move || match data.get() {
-                None => view! { <p class="loading">"Loading households…"</p> }.into_any(),
-                Some(Err(error)) => view! { <ErrorBanner message=error.to_string()/> }.into_any(),
-                Some(Ok(response)) => view! { <HouseholdsTable response=response stage_action=stage_action/> }.into_any(),
-            }}
+            <Suspense fallback=|| view! { <p class="loading">"Loading households…"</p> }>
+                {move || data.get().map(|res| match res {
+                    Err(error) => view! { <ErrorBanner message=error.to_string()/> }.into_any(),
+                    Ok(response) => view! { <HouseholdsTable response=response stage_action=stage_action/> }.into_any(),
+                })}
+            </Suspense>
         </main>
     }
 }

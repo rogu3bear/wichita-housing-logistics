@@ -108,11 +108,12 @@ pub fn PlacementsPage() -> impl IntoView {
                 </form>
             </section>
 
-            {move || match placements.get() {
-                None => view! { <p class="loading">"Loading placements…"</p> }.into_any(),
-                Some(Err(error)) => view! { <ErrorBanner message=error.to_string()/> }.into_any(),
-                Some(Ok(response)) => view! { <PlacementsTable response=response status_action=status_action/> }.into_any(),
-            }}
+            <Suspense fallback=|| view! { <p class="loading">"Loading placements…"</p> }>
+                {move || placements.get().map(|res| match res {
+                    Err(error) => view! { <ErrorBanner message=error.to_string()/> }.into_any(),
+                    Ok(response) => view! { <PlacementsTable response=response status_action=status_action/> }.into_any(),
+                })}
+            </Suspense>
         </main>
     }
 }

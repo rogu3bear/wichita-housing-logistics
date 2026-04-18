@@ -132,11 +132,12 @@ pub fn ActivityPage() -> impl IntoView {
                 </form>
             </section>
 
-            {move || match data.get() {
-                None => view! { <p class="loading">"Loading activity…"</p> }.into_any(),
-                Some(Err(error)) => view! { <ErrorBanner message=error.to_string()/> }.into_any(),
-                Some(Ok(notes)) => view! { <ActivityFeed notes=notes/> }.into_any(),
-            }}
+            <Suspense fallback=|| view! { <p class="loading">"Loading activity…"</p> }>
+                {move || data.get().map(|res| match res {
+                    Err(error) => view! { <ErrorBanner message=error.to_string()/> }.into_any(),
+                    Ok(notes) => view! { <ActivityFeed notes=notes/> }.into_any(),
+                })}
+            </Suspense>
         </main>
     }
 }
