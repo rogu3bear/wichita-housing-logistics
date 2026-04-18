@@ -3,6 +3,7 @@ mod app;
 mod asset_hashes;
 mod build_info;
 mod components;
+mod operator;
 #[cfg(feature = "ssr")]
 mod server;
 

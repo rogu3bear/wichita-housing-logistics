@@ -16,6 +16,9 @@ pub fn TopNav() -> impl IntoView {
                     <A href="/inventory" attr:class="topnav-link">"Inventory"</A>
                     <A href="/placements" attr:class="topnav-link">"Placements"</A>
                     <A href="/activity" attr:class="topnav-link">"Activity"</A>
+                    <A href="/resources" attr:class="topnav-link">"Resources"</A>
+                    <A href="/reference" attr:class="topnav-link">"Reference"</A>
+                    <A href="/connect" attr:class="topnav-link">"Connect"</A>
                 </nav>
             </div>
         </header>
@@ -58,14 +61,18 @@ pub fn EmptyState(
 pub fn BuildFooter() -> impl IntoView {
     let version = crate::build_info::VERSION;
     let sha = crate::build_info::COMMIT_SHA;
-    let feedback = crate::build_info::FEEDBACK_URL;
+    let email = crate::build_info::FEEDBACK_EMAIL;
+    // Pre-fill the operator's mail draft with the exact revision they're on.
+    let feedback_href = format!(
+        "mailto:{email}?subject=WHL%20feedback%20(v{version}%20{sha})",
+    );
 
     view! {
         <footer class="build-footer">
             <span class="build-id">
                 "v" {version} " · " {sha}
             </span>
-            <a class="build-feedback" href=feedback target="_blank" rel="noopener">
+            <a class="build-feedback" href=feedback_href>
                 "Report an issue"
             </a>
         </footer>

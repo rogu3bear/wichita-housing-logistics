@@ -4,7 +4,9 @@ use crate::api::{
     list_households, list_placements, list_resources, CreatePlacement, Household, HousingResource,
     Placement, PlacementsResponse, SetPlacementStatus,
 };
-use crate::components::layout::{humanize, ErrorBanner, PageHeader, TopNav};
+use crate::components::layout::{
+    humanize, status_pill_class, EmptyState, ErrorBanner, PageHeader, TopNav,
+};
 
 const STATUSES: &[&str] = &["proposed", "confirmed", "moved_in", "exited", "cancelled"];
 
@@ -18,7 +20,6 @@ pub fn PlacementsPage() -> impl IntoView {
         |_| async move { list_placements().await },
     );
 
-    // Pickers refresh when a placement is created (so in-flight inventory may change).
     let households = Resource::new(
         move || create_action.version().get(),
         |_| async move { list_households().await.map(|r| r.items) },
@@ -83,17 +84,18 @@ pub fn PlacementsPage() -> impl IntoView {
 
             <section class="panel">
                 <form class="form-grid" on:submit=on_submit>
-                    <div class="form-row form-row--wide">
+                    <div class="form-row form-row--span-6">
                         <label for="pl-hh">"Household"</label>
                         <HouseholdSelect signal=household_id resource=households/>
                     </div>
-                    <div class="form-row form-row--wide">
+                    <div class="form-row form-row--span-6">
                         <label for="pl-rs">"Resource"</label>
                         <ResourceSelect signal=resource_id resource=resources/>
                     </div>
                     <div class="form-row form-row--wide">
                         <label for="pl-notes">"Notes"</label>
                         <textarea id="pl-notes" rows="2"
+                            placeholder="Match rationale, target move-in, conditions…"
                             prop:value=move || notes.get()
                             on:input=move |ev| notes.set(event_target_value(&ev))/>
                     </div>
@@ -171,32 +173,41 @@ fn PlacementsTable(
     );
 
     view! {
-        <section class="panel">
+        <section class="panel panel--flush">
             <div class="panel-head">
-                <h2>"Placement board"</h2>
-                <p class="muted">{summary}</p>
+                <div>
+                    <h2>"Placement board"</h2>
+                    <p>{summary}</p>
+                </div>
             </div>
             {if items.is_empty() {
-                view! { <p class="muted">"No placements yet."</p> }.into_any()
+                view! {
+                    <EmptyState
+                        title="No placements yet"
+                        body="Create a placement above to match a household to a housing resource."
+                    />
+                }.into_any()
             } else {
                 view! {
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>"Household"</th>
-                                <th>"Resource"</th>
-                                <th>"Status"</th>
-                                <th>"Started"</th>
-                                <th>"Ended"</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {items.into_iter().map(|p| view! {
-                                <PlacementRow placement=p status_action=status_action/>
-                            }).collect::<Vec<_>>()}
-                        </tbody>
-                    </table>
+                    <div class="data-table-scroll">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>"Household"</th>
+                                    <th>"Resource"</th>
+                                    <th>"Status"</th>
+                                    <th>"Started"</th>
+                                    <th>"Ended"</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {items.into_iter().map(|p| view! {
+                                    <PlacementRow placement=p status_action=status_action/>
+                                }).collect::<Vec<_>>()}
+                            </tbody>
+                        </table>
+                    </div>
                 }.into_any()
             }}
         </section>
@@ -220,32 +231,49 @@ fn PlacementRow(
     let status_sig = RwSignal::new(status.clone());
     let current_status = status.clone();
 
+    let current_for_row = current_status.clone();
+    let row_class = move || {
+        let mut c = String::new();
+        if status_action.pending().get() {
+            c.push_str("row--pending");
+        } else if status_sig.get() != current_for_row {
+            c.push_str("row--dirty");
+        }
+        c
+    };
+
+    let current_for_btn = current_status.clone();
+    let pill_class = status_pill_class(&status);
+    let status_label = humanize(&status);
+
     view! {
-        <tr>
+        <tr class=row_class>
             <td>
                 <div class="strong">{head_name}</div>
-                <div class="muted small">"placement #"{id}</div>
+                <div class="id-chip">"placement #"{id}</div>
             </td>
             <td class="muted">{resource_label}</td>
             <td>
+                <span class=pill_class>{status_label}</span>
+            </td>
+            <td class="muted mono small">{started_at.unwrap_or_else(|| "—".into())}</td>
+            <td class="muted mono small">{ended_at.unwrap_or_else(|| "—".into())}</td>
+            <td class="row-actions">
                 <select
                     prop:value=move || status_sig.get()
+                    attr:data-status=move || status_sig.get()
                     on:change=move |ev| status_sig.set(event_target_value(&ev))>
                     {STATUSES.iter().map(|s| {
                         let label = humanize(s);
                         view! { <option value=*s>{label}</option> }
                     }).collect::<Vec<_>>()}
                 </select>
-            </td>
-            <td class="muted">{started_at.unwrap_or_else(|| "—".into())}</td>
-            <td class="muted">{ended_at.unwrap_or_else(|| "—".into())}</td>
-            <td class="row-actions">
-                <button class="secondary"
-                    disabled=move || status_action.pending().get() || status_sig.get() == current_status
+                <button class="secondary compact save-btn"
+                    disabled=move || status_action.pending().get() || status_sig.get() == current_for_btn
                     on:click=move |_| {
                         status_action.dispatch(SetPlacementStatus { id, status: status_sig.get_untracked() });
                     }>
-                    "Save"
+                    {move || if status_action.pending().get() { "Saving…" } else { "Save" }}
                 </button>
             </td>
         </tr>

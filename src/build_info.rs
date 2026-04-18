@@ -15,8 +15,8 @@ pub const COMMIT_SHA: &str = match option_env!("GIT_COMMIT_SHA") {
     None => "unknown",
 };
 
-/// URL the footer links to for operator feedback. Kept as a compile-time
-/// const so every deployed build points at the same issue tracker even
-/// if the browser's view is stale.
-pub const FEEDBACK_URL: &str =
-    "https://github.com/rogu3bear/wichita-housing-logistics/issues/new";
+/// URL the footer links to for operator feedback. `mailto:` so a case
+/// manager can send context without creating a GitHub account. The
+/// subject is pre-filled with the version + commit SHA in the body at
+/// render time (see `layout.rs::BuildFooter`).
+pub const FEEDBACK_EMAIL: &str = "a.james.apple@icloud.com";
