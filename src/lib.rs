@@ -14,7 +14,12 @@ async fn fetch(
     _ctx: worker::Context,
 ) -> worker::Result<axum::http::Response<axum::body::Body>> {
     use axum::Router;
-    use axum::http::header::{CACHE_CONTROL, HeaderValue, REFERRER_POLICY, X_CONTENT_TYPE_OPTIONS};
+    use axum::http::{
+        header::{
+            CACHE_CONTROL, CONTENT_SECURITY_POLICY, HeaderName, HeaderValue,
+            REFERRER_POLICY, STRICT_TRANSPORT_SECURITY, X_CONTENT_TYPE_OPTIONS, X_FRAME_OPTIONS,
+        },
+    };
     use leptos::prelude::*;
     use leptos_axum::{generate_route_list, LeptosRoutes};
     use tower_service::Service;
@@ -46,13 +51,42 @@ async fn fetch(
         "no-store"
     };
     headers.insert(CACHE_CONTROL, HeaderValue::from_static(cache_value));
-    headers.insert(
-        X_CONTENT_TYPE_OPTIONS,
-        HeaderValue::from_static("nosniff"),
-    );
+    headers.insert(X_CONTENT_TYPE_OPTIONS, HeaderValue::from_static("nosniff"));
     headers.insert(
         REFERRER_POLICY,
         HeaderValue::from_static("strict-origin-when-cross-origin"),
+    );
+
+    // CSP: all resources are self-hosted; WASM needs 'wasm-unsafe-eval' to
+    // instantiate; the Leptos hydration bootstrap inlines a <script type=
+    // "module"> so 'unsafe-inline' is required until that moves to an
+    // external file. `frame-ancestors 'none'` + X-Frame-Options: DENY block
+    // clickjacking. `object-src 'none'` + `base-uri 'self'` narrow legacy
+    // plugin and <base> hijack surfaces.
+    headers.insert(
+        CONTENT_SECURITY_POLICY,
+        HeaderValue::from_static(
+            "default-src 'self'; \
+             script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; \
+             style-src 'self'; \
+             img-src 'self' data:; \
+             font-src 'self'; \
+             connect-src 'self'; \
+             frame-ancestors 'none'; \
+             object-src 'none'; \
+             base-uri 'self'",
+        ),
+    );
+    headers.insert(X_FRAME_OPTIONS, HeaderValue::from_static("DENY"));
+    headers.insert(
+        STRICT_TRANSPORT_SECURITY,
+        HeaderValue::from_static("max-age=31536000; includeSubDomains"),
+    );
+    headers.insert(
+        HeaderName::from_static("permissions-policy"),
+        HeaderValue::from_static(
+            "camera=(), microphone=(), geolocation=(), interest-cohort=()",
+        ),
     );
 
     Ok(response)
