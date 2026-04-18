@@ -274,6 +274,34 @@ pub async fn create_note(
     ssr_call!(crate::server::activity::create_note(entity_type, entity_id, author, body).await)
 }
 
+/// Explicitly register every `#[server]` fn in this crate.
+///
+/// The `inventory` crate that Leptos uses for auto-registration doesn't
+/// work in a wasm Worker isolate, so every server fn needs a one-liner
+/// here — otherwise POST `/api/<FnName>` 400s with "Could not find a
+/// server function at the route …".
+///
+/// Idempotent: re-registering just overwrites the same entry in the
+/// process-global registry, so calling on every request is cheap.
+#[cfg(feature = "ssr")]
+pub fn register_all() {
+    use leptos::server_fn::axum::register_explicit;
+    register_explicit::<DashboardSnapshotFn>();
+    register_explicit::<ListHouseholds>();
+    register_explicit::<CreateHousehold>();
+    register_explicit::<SetHouseholdStage>();
+    register_explicit::<CaseViewFn>();
+    register_explicit::<SubmitHouseholdUpdate>();
+    register_explicit::<ListResources>();
+    register_explicit::<CreateResource>();
+    register_explicit::<SetResourceStatus>();
+    register_explicit::<ListPlacements>();
+    register_explicit::<CreatePlacement>();
+    register_explicit::<SetPlacementStatus>();
+    register_explicit::<ListActivity>();
+    register_explicit::<CreateNote>();
+}
+
 #[allow(dead_code)]
 fn empty_to_none(value: String) -> Option<String> {
     let trimmed = value.trim();
