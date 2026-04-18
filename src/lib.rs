@@ -1,3 +1,9 @@
+// Leptos' view! macro produces deeply nested generic types; release-mode
+// monomorphization overflows rustc's default recursion limit (128) once
+// page markup grows past a handful of panels. Bump this whenever a new
+// page lands and the build complains.
+#![recursion_limit = "512"]
+
 mod api;
 mod app;
 mod asset_hashes;

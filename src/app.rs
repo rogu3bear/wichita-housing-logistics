@@ -8,8 +8,10 @@ use leptos_router::{
 use crate::components::{
     activity_page::ActivityPage, case_page::CasePage, connect_page::ConnectPage,
     dashboard_page::DashboardPage, households_page::HouseholdsPage,
-    inventory_page::InventoryPage, layout::BuildFooter, placements_page::PlacementsPage,
-    reference_page::ReferencePage, resources_page::ResourcesPage,
+    inventory_page::InventoryPage,
+    layout::{BuildFooter, SitrepBanner},
+    placements_page::PlacementsPage, reference_page::ReferencePage,
+    resources_page::ResourcesPage, routing_page::RoutingPage, situational_page::SituationalPage,
 };
 
 #[allow(dead_code)]
@@ -45,11 +47,14 @@ pub fn App() -> impl IntoView {
         />
 
         <Router>
+            <SitrepBanner/>
             <Routes fallback=|| view! { <p class="route-miss">"Page not found."</p> }.into_view()>
                 <Route path=StaticSegment("") view=DashboardPage/>
+                <Route path=StaticSegment("situational") view=SituationalPage/>
                 <Route path=StaticSegment("households") view=HouseholdsPage/>
                 <Route path=StaticSegment("inventory") view=InventoryPage/>
                 <Route path=StaticSegment("placements") view=PlacementsPage/>
+                <Route path=StaticSegment("routing") view=RoutingPage/>
                 <Route path=StaticSegment("activity") view=ActivityPage/>
                 <Route path=StaticSegment("resources") view=ResourcesPage/>
                 <Route path=StaticSegment("reference") view=ReferencePage/>
