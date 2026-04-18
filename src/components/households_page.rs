@@ -185,6 +185,7 @@ fn HouseholdRow(
         phone,
         email,
         stage,
+        intake_notes,
         updated_at,
         ..
     } = household;
@@ -202,6 +203,9 @@ fn HouseholdRow(
             <td>
                 <div class="strong">{head_name}</div>
                 <div class="muted small">"#"{id}</div>
+                {intake_notes.map(|note| view! {
+                    <div class="muted small cell-note">{note}</div>
+                })}
             </td>
             <td>{household_size}</td>
             <td class="muted">{contact}</td>
