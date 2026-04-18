@@ -12,9 +12,11 @@ pub fn TopNav() -> impl IntoView {
                 </A>
                 <nav class="topnav-links" aria-label="Primary">
                     <A href="/" attr:class="topnav-link" exact=true>"Dashboard"</A>
+                    <A href="/situational" attr:class="topnav-link">"Situational"</A>
                     <A href="/households" attr:class="topnav-link">"Households"</A>
                     <A href="/inventory" attr:class="topnav-link">"Inventory"</A>
                     <A href="/placements" attr:class="topnav-link">"Placements"</A>
+                    <A href="/routing" attr:class="topnav-link">"Routing"</A>
                     <A href="/activity" attr:class="topnav-link">"Activity"</A>
                     <A href="/resources" attr:class="topnav-link">"Resources"</A>
                     <A href="/reference" attr:class="topnav-link">"Reference"</A>
@@ -23,6 +25,33 @@ pub fn TopNav() -> impl IntoView {
             </div>
         </header>
     }
+}
+
+/// Red banner below the top nav during a declared stress event. Only
+/// renders when `build_info::SITREP_ACTIVE` is true — operators flip
+/// the constant + redeploy when a multi-event crisis is in progress.
+/// Static during a single build (no server state, no polling).
+#[component]
+pub fn SitrepBanner() -> impl IntoView {
+    if !crate::build_info::SITREP_ACTIVE {
+        return view! { <></> }.into_any();
+    }
+    let summary = crate::build_info::SITREP_SUMMARY;
+    view! {
+        <aside class="sitrep sitrep--red" role="status" aria-live="polite">
+            <div class="sitrep-inner">
+                <span class="sitrep-tag">"SITREP"</span>
+                <div class="sitrep-title">
+                    "Stress conditions active"
+                    <span>{summary}</span>
+                </div>
+                <div class="sitrep-actions">
+                    <A href="/situational" attr:class="">"Open situational view"</A>
+                    <A href="/routing" attr:class="primary">"Run routing"</A>
+                </div>
+            </div>
+        </aside>
+    }.into_any()
 }
 
 #[component]

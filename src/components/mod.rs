@@ -8,3 +8,5 @@ pub mod layout;
 pub mod placements_page;
 pub mod reference_page;
 pub mod resources_page;
+pub mod routing_page;
+pub mod situational_page;
