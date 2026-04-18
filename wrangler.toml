@@ -1,4 +1,4 @@
-name = "leptos-cf"
+name = "wichita-housing-logistics"
 main = "build/index.js"
 compatibility_date = "2026-03-20"
 
@@ -10,7 +10,7 @@ directory = "./target/site"
 
 [[d1_databases]]
 binding = "DB"
-database_name = "leptos-cf-db"
+database_name = "wichita-housing-logistics-db"
 database_id = "00000000-0000-0000-0000-000000000000"
 preview_database_id = "00000000-0000-0000-0000-000000000000"
 migrations_dir = "migrations"

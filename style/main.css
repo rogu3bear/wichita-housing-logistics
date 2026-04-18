@@ -72,9 +72,7 @@ input {
 }
 
 .hero-copy,
-.composer-card,
 .panel,
-.stat-card,
 .feedback {
   border: 1px solid var(--line);
   border-radius: var(--radius-xl);
@@ -102,90 +100,6 @@ input {
   line-height: 1.65;
 }
 
-.composer-card {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding: 26px;
-  gap: 16px;
-}
-
-.composer-label,
-.panel-head h2,
-.empty-state h3 {
-  margin: 0;
-  font-family: "Avenir Next Condensed", "Franklin Gothic Medium", sans-serif;
-  font-size: 1.15rem;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-}
-
-.composer-row {
-  display: flex;
-  gap: 12px;
-}
-
-.composer-input {
-  flex: 1;
-  min-width: 0;
-  padding: 15px 18px;
-  border: 1px solid rgba(35, 28, 23, 0.12);
-  border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.75);
-  color: var(--ink);
-}
-
-.composer-input:focus {
-  outline: 2px solid rgba(223, 93, 47, 0.2);
-  border-color: var(--accent);
-}
-
-.composer-button,
-.ghost-button,
-.todo-toggle,
-.todo-delete {
-  border: none;
-  cursor: pointer;
-  transition:
-    transform 140ms ease,
-    opacity 140ms ease,
-    background 140ms ease,
-    color 140ms ease;
-}
-
-.composer-button {
-  padding: 0 22px;
-  border-radius: var(--radius-md);
-  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-deep) 100%);
-  color: #fff8f2;
-  white-space: nowrap;
-}
-
-.composer-button:hover:not(:disabled),
-.ghost-button:hover,
-.todo-toggle:hover:not(:disabled),
-.todo-delete:hover:not(:disabled) {
-  transform: translateY(-1px);
-}
-
-.composer-button:disabled,
-.ghost-button:disabled,
-.todo-toggle:disabled,
-.todo-delete:disabled {
-  cursor: progress;
-  opacity: 0.6;
-}
-
-.composer-hint,
-.panel-head p,
-.todo-copy p,
-.empty-state p,
-.error-panel p {
-  margin: 0;
-  color: var(--ink-soft);
-  line-height: 1.55;
-}
-
 .feedback {
   margin-bottom: 18px;
   padding: 16px 18px;
@@ -197,139 +111,14 @@ input {
   color: var(--accent-deep);
 }
 
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
-  margin-bottom: 18px;
-}
-
-.stat-card {
-  padding: 20px 22px;
-}
-
-.stat-label {
-  display: block;
-  color: var(--ink-soft);
-  font-size: 0.82rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin-bottom: 10px;
-}
-
-.stat-value {
-  font-size: clamp(1.9rem, 3vw, 2.6rem);
-  letter-spacing: -0.05em;
-}
-
 .panel {
   padding: 24px;
-}
-
-.panel-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: start;
-  gap: 18px;
-  margin-bottom: 18px;
-}
-
-.pill {
-  display: inline-flex;
-  align-items: center;
-  padding: 8px 12px;
-  border-radius: var(--radius-pill);
-  background: var(--accent-soft);
-  color: var(--accent-deep);
-  font-size: 0.82rem;
-  font-family: "Avenir Next Condensed", "Franklin Gothic Medium", sans-serif;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-.todo-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.todo-row {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: 16px;
-  align-items: center;
-  padding: 18px;
-  border: 1px solid rgba(35, 28, 23, 0.08);
-  border-radius: calc(var(--radius-lg) + 2px);
-  background: rgba(255, 255, 255, 0.74);
-}
-
-.todo-row--done {
-  background: rgba(231, 248, 239, 0.8);
-}
-
-.todo-row--mutating {
-  opacity: 0.78;
-}
-
-.todo-toggle {
-  min-width: 88px;
-  padding: 11px 14px;
-  border-radius: var(--radius-pill);
-  background: rgba(35, 28, 23, 0.08);
-  color: var(--ink);
-}
-
-.todo-row--done .todo-toggle {
-  background: rgba(31, 122, 82, 0.14);
-  color: var(--success);
-}
-
-.todo-copy {
-  min-width: 0;
-}
-
-.todo-copy h3 {
-  margin: 0 0 6px;
-  font-size: 1.05rem;
-  line-height: 1.3;
-}
-
-.todo-row--done .todo-copy h3 {
-  color: var(--ink-soft);
-  text-decoration: line-through;
-}
-
-.todo-delete,
-.ghost-button {
-  padding: 11px 16px;
-  border-radius: var(--radius-pill);
-  background: rgba(35, 28, 23, 0.08);
-  color: var(--ink);
-}
-
-.todo-delete:hover:not(:disabled) {
-  background: rgba(167, 63, 27, 0.12);
-  color: var(--accent-deep);
-}
-
-.empty-state,
-.loading-panel,
-.error-panel,
-.route-miss {
-  text-align: center;
-}
-
-.empty-state {
-  padding: 34px 14px 18px;
 }
 
 .loading-panel {
   display: grid;
   gap: 14px;
+  text-align: center;
 }
 
 .skeleton {
@@ -357,6 +146,7 @@ input {
 
 .route-miss {
   padding: 64px 20px;
+  text-align: center;
 }
 
 @keyframes shimmer {
@@ -370,13 +160,8 @@ input {
 }
 
 @media (max-width: 860px) {
-  .hero-grid,
-  .stats-grid {
+  .hero-grid {
     grid-template-columns: 1fr;
-  }
-
-  .panel-head {
-    flex-direction: column;
   }
 }
 
@@ -386,22 +171,8 @@ input {
   }
 
   .hero-copy,
-  .composer-card,
-  .panel,
-  .stat-card {
+  .panel {
     padding: 20px;
     border-radius: 22px;
-  }
-
-  .composer-row,
-  .todo-row {
-    grid-template-columns: 1fr;
-  }
-
-  .composer-button,
-  .todo-toggle,
-  .todo-delete,
-  .ghost-button {
-    width: 100%;
   }
 }

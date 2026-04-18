@@ -916,25 +916,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "leptos-cf"
-version = "0.1.2"
-dependencies = [
- "axum",
- "console_error_panic_hook",
- "getrandom 0.3.4",
- "getrandom 0.4.2",
- "leptos",
- "leptos_axum",
- "leptos_meta",
- "leptos_router",
- "send_wrapper",
- "serde",
- "tower-service",
- "wasm-bindgen",
- "worker",
-]
-
-[[package]]
 name = "leptos_axum"
 version = "0.8.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2241,6 +2222,25 @@ checksum = "854ba17bb104abfb26ba36da9729addc7ce7f06f5c0f90f3c391f8461cca21f9"
 dependencies = [
  "js-sys",
  "wasm-bindgen",
+]
+
+[[package]]
+name = "wichita-housing-logistics"
+version = "0.1.2"
+dependencies = [
+ "axum",
+ "console_error_panic_hook",
+ "getrandom 0.3.4",
+ "getrandom 0.4.2",
+ "leptos",
+ "leptos_axum",
+ "leptos_meta",
+ "leptos_router",
+ "send_wrapper",
+ "serde",
+ "tower-service",
+ "wasm-bindgen",
+ "worker",
 ]
 
 [[package]]
