@@ -5,6 +5,7 @@ use crate::api::{Placement, PlacementStatusCounts, PlacementsResponse};
 
 use super::{
     d1_error, database, normalize_text, row_id_arg, validate_allowed, AppError, AppResult,
+    GroupCountRow,
 };
 
 pub const ALLOWED_STATUSES: &[&str] = &["proposed", "confirmed", "moved_in", "exited", "cancelled"];
@@ -52,27 +53,44 @@ const LIST_SQL: &str = "SELECT p.id, p.household_id, p.resource_id,
 
 pub async fn list_placements() -> AppResult<PlacementsResponse> {
     let db = database()?;
-    let result = db
-        .prepare(&format!("{LIST_SQL} ORDER BY p.id DESC LIMIT 500"))
-        .all()
-        .await
-        .map_err(|e| d1_error("Failed to list placements.", e))?;
+    let list_sql = format!("{LIST_SQL} ORDER BY p.id DESC LIMIT 500");
 
-    let items = result
+    let statements = vec![
+        db.prepare(&list_sql),
+        db.prepare("SELECT status AS key, COUNT(*) AS n FROM placements GROUP BY status"),
+    ];
+
+    let results = db
+        .batch(statements)
+        .await
+        .map_err(|e| d1_error("Failed to batch list_placements.", e))?;
+
+    if results.len() != 2 {
+        return Err(AppError::internal(
+            "placements batch returned unexpected number of results.",
+            format!("expected 2, got {}", results.len()),
+        ));
+    }
+
+    let items = results[0]
         .results::<PlacementRow>()
         .map_err(|e| d1_error("Failed to deserialize placement rows.", e))?
         .into_iter()
         .map(map)
         .collect::<Vec<_>>();
 
+    let count_rows: Vec<GroupCountRow> = results[1]
+        .results()
+        .map_err(|e| d1_error("Failed to deserialize placement status counts.", e))?;
+
     let mut counts = PlacementStatusCounts::default();
-    for item in &items {
-        match item.status.as_str() {
-            "proposed" => counts.proposed += 1,
-            "confirmed" => counts.confirmed += 1,
-            "moved_in" => counts.moved_in += 1,
-            "exited" => counts.exited += 1,
-            "cancelled" => counts.cancelled += 1,
+    for row in count_rows {
+        match row.key.as_str() {
+            "proposed" => counts.proposed = row.n,
+            "confirmed" => counts.confirmed = row.n,
+            "moved_in" => counts.moved_in = row.n,
+            "exited" => counts.exited = row.n,
+            "cancelled" => counts.cancelled = row.n,
             _ => {}
         }
     }

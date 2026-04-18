@@ -5,6 +5,7 @@ use crate::api::{HousingResource, ResourceStatusCounts, ResourcesResponse};
 
 use super::{
     d1_error, database, normalize_text, row_id_arg, validate_allowed, AppError, AppResult,
+    GroupCountRow,
 };
 
 pub const ALLOWED_KINDS: &[&str] = &[
@@ -46,33 +47,51 @@ fn map(row: ResourceRow) -> HousingResource {
 
 pub async fn list_resources() -> AppResult<ResourcesResponse> {
     let db = database()?;
-    let result = db
-        .prepare(
+
+    let statements = vec![
+        db.prepare(
             "SELECT id, label, kind, address, capacity, status, notes,
                     strftime('%Y-%m-%d %H:%M UTC', created_at) AS created_at,
                     strftime('%Y-%m-%d %H:%M UTC', updated_at) AS updated_at
              FROM housing_resources
              ORDER BY id DESC
              LIMIT 500",
-        )
-        .all()
-        .await
-        .map_err(|e| d1_error("Failed to list housing resources.", e))?;
+        ),
+        db.prepare(
+            "SELECT status AS key, COUNT(*) AS n FROM housing_resources GROUP BY status",
+        ),
+    ];
 
-    let items = result
+    let results = db
+        .batch(statements)
+        .await
+        .map_err(|e| d1_error("Failed to batch list_resources.", e))?;
+
+    if results.len() != 2 {
+        return Err(AppError::internal(
+            "resources batch returned unexpected number of results.",
+            format!("expected 2, got {}", results.len()),
+        ));
+    }
+
+    let items = results[0]
         .results::<ResourceRow>()
         .map_err(|e| d1_error("Failed to deserialize resource rows.", e))?
         .into_iter()
         .map(map)
         .collect::<Vec<_>>();
 
+    let count_rows: Vec<GroupCountRow> = results[1]
+        .results()
+        .map_err(|e| d1_error("Failed to deserialize resource status counts.", e))?;
+
     let mut counts = ResourceStatusCounts::default();
-    for item in &items {
-        match item.status.as_str() {
-            "available" => counts.available += 1,
-            "held" => counts.held += 1,
-            "occupied" => counts.occupied += 1,
-            "offline" => counts.offline += 1,
+    for row in count_rows {
+        match row.key.as_str() {
+            "available" => counts.available = row.n,
+            "held" => counts.held = row.n,
+            "occupied" => counts.occupied = row.n,
+            "offline" => counts.offline = row.n,
             _ => {}
         }
     }

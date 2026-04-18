@@ -5,6 +5,7 @@ use crate::api::{Household, HouseholdsResponse, StageCounts};
 
 use super::{
     d1_error, database, normalize_text, row_id_arg, validate_allowed, AppError, AppResult,
+    GroupCountRow,
 };
 
 pub const ALLOWED_STAGES: &[&str] = &[
@@ -45,34 +46,51 @@ fn map(row: HouseholdRow) -> Household {
 pub async fn list_households() -> AppResult<HouseholdsResponse> {
     let db = database()?;
 
-    let result = db
-        .prepare(
+    // Two statements per round-trip: the capped list + an un-capped GROUP BY
+    // so stage counts don't lie once the table grows past LIMIT 500.
+    let statements = vec![
+        db.prepare(
             "SELECT id, head_name, household_size, phone, email, stage, intake_notes,
                     strftime('%Y-%m-%d %H:%M UTC', created_at) AS created_at,
                     strftime('%Y-%m-%d %H:%M UTC', updated_at) AS updated_at
              FROM households
              ORDER BY id DESC
              LIMIT 500",
-        )
-        .all()
-        .await
-        .map_err(|e| d1_error("Failed to list households.", e))?;
+        ),
+        db.prepare("SELECT stage AS key, COUNT(*) AS n FROM households GROUP BY stage"),
+    ];
 
-    let items = result
+    let results = db
+        .batch(statements)
+        .await
+        .map_err(|e| d1_error("Failed to batch list_households.", e))?;
+
+    if results.len() != 2 {
+        return Err(AppError::internal(
+            "households batch returned unexpected number of results.",
+            format!("expected 2, got {}", results.len()),
+        ));
+    }
+
+    let items = results[0]
         .results::<HouseholdRow>()
         .map_err(|e| d1_error("Failed to deserialize household rows.", e))?
         .into_iter()
         .map(map)
         .collect::<Vec<_>>();
 
+    let count_rows: Vec<GroupCountRow> = results[1]
+        .results()
+        .map_err(|e| d1_error("Failed to deserialize household stage counts.", e))?;
+
     let mut counts = StageCounts::default();
-    for item in &items {
-        match item.stage.as_str() {
-            "intake" => counts.intake += 1,
-            "assessment" => counts.assessment += 1,
-            "placement" => counts.placement += 1,
-            "follow_up" => counts.follow_up += 1,
-            "exited" => counts.exited += 1,
+    for row in count_rows {
+        match row.key.as_str() {
+            "intake" => counts.intake = row.n,
+            "assessment" => counts.assessment = row.n,
+            "placement" => counts.placement = row.n,
+            "follow_up" => counts.follow_up = row.n,
+            "exited" => counts.exited = row.n,
             _ => {}
         }
     }
