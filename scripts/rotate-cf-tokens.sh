@@ -82,41 +82,27 @@ revoke_child() {
   fi
 }
 
-# Mint a child and return the new record as JSON: {name,id,value,expires_on,created_at}.
-#
-# Scope resolution:
-#   - Account-scoped (default): resources = {"com.cloudflare.api.account.<acct>": "*"}
-#   - Zone-scoped: pass a zone id as $3; resources = {"com.cloudflare.api.account.zone.<zid>": "*"}
-#     Zone-scoped children cannot touch account-level APIs — they are for zone ops only.
-mint_child() {
-  # Positional contract (always 3 fixed + variadic):
-  #   $1 name   $2 expires_on   $3 zone_id (empty string = account scope)   $4+ perm-group ids
-  local name="$1" expires_on="$2" zone_id="$3"
-  shift 3
+# Build a single "allow" policy object as JSON, given a resource string (e.g.
+# "com.cloudflare.api.account.<acct>") and one or more perm-group ids.
+policy_for() {
+  local resource_key="$1"; shift
   local perm_ids_json
   perm_ids_json="$(printf '%s\n' "$@" | jq -R '{id: .}' | jq -s .)"
+  jq -n --arg rk "$resource_key" --argjson pgs "$perm_ids_json" '
+    { effect: "allow", resources: { ($rk): "*" }, permission_groups: $pgs }'
+}
 
-  local resources_json
-  if [ -n "$zone_id" ]; then
-    resources_json="$(jq -n --arg zid "$zone_id" '{("com.cloudflare.api.account.zone." + $zid): "*"}')"
-  else
-    resources_json="$(jq -n --arg acct "$ACCT" '{("com.cloudflare.api.account." + $acct): "*"}')"
-  fi
-
+# Mint a child with an explicit policies array. Returns the new record as JSON:
+# {name,id,value,expires_on,created_at}.
+#
+# Use this when a child needs permissions across different resource scopes
+# (e.g. worker-deploy needs account-scoped Workers Scripts AND zone-scoped
+# Workers Routes on one specific zone).
+mint_child_multi() {
+  local name="$1" expires_on="$2" policies_json="$3"
   local body
-  body="$(jq -n --arg name "$name" --arg exp "$expires_on" \
-    --argjson res "$resources_json" --argjson pgs "$perm_ids_json" '
-    {
-      name: $name,
-      policies: [
-        {
-          effect: "allow",
-          resources: $res,
-          permission_groups: $pgs
-        }
-      ],
-      expires_on: $exp
-    }')"
+  body="$(jq -n --arg name "$name" --arg exp "$expires_on" --argjson pol "$policies_json" '
+    { name: $name, policies: $pol, expires_on: $exp }')"
 
   local resp
   resp="$(curl -sS -X POST "${AUTH_MINTER[@]}" -H "Content-Type: application/json" \
@@ -125,6 +111,26 @@ mint_child() {
 
   echo "$resp" | jq -c '{name: .result.name, id: .result.id, value: .result.value,
                          expires_on: .result.expires_on, created_at: now | todate}'
+}
+
+# Thin wrapper — single-scope child. Most children use this.
+#
+# Scope resolution:
+#   - Account-scoped (default): resources = {"com.cloudflare.api.account.<acct>": "*"}
+#   - Zone-scoped: pass a zone id as $3; resources = {"com.cloudflare.api.account.zone.<zid>": "*"}
+mint_child() {
+  # Positional contract: $1 name   $2 expires_on   $3 zone_id (empty = account)   $4+ perm-group ids
+  local name="$1" expires_on="$2" zone_id="$3"
+  shift 3
+  local resource_key
+  if [ -n "$zone_id" ]; then
+    resource_key="com.cloudflare.api.account.zone.$zone_id"
+  else
+    resource_key="com.cloudflare.api.account.$ACCT"
+  fi
+  local policy
+  policy="$(policy_for "$resource_key" "$@")"
+  mint_child_multi "$name" "$expires_on" "[$policy]"
 }
 
 # Write a sourceable env file for a child.
@@ -205,11 +211,13 @@ cf_check "$(cat "$STATE_DIR/perm-groups.json")" "permission-groups list"
 PG_ACCOUNT_SETTINGS_READ="$(pg_id 'Account Settings Read')"
 PG_D1_WRITE="$(pg_id 'D1 Write')"
 PG_WORKERS_SCRIPTS_WRITE="$(pg_id 'Workers Scripts Write')"
+PG_WORKERS_ROUTES_WRITE="$(pg_id 'Workers Routes Write')"
 PG_DNS_WRITE="$(pg_id 'DNS Write')"
 
 [ -n "$PG_ACCOUNT_SETTINGS_READ" ]   || die "could not resolve 'Account Settings Read' permission-group"
 [ -n "$PG_D1_WRITE" ]                || die "could not resolve 'D1 Write' permission-group"
 [ -n "$PG_WORKERS_SCRIPTS_WRITE" ]   || die "could not resolve 'Workers Scripts Write' permission-group"
+[ -n "$PG_WORKERS_ROUTES_WRITE" ]    || die "could not resolve 'Workers Routes Write' permission-group"
 [ -n "$PG_DNS_WRITE" ]               || die "could not resolve 'DNS Write' permission-group"
 
 # Zones this repo operates on. Add more as subdomains/surfaces grow.
@@ -243,6 +251,24 @@ rotate() {
   persist_child "$record"
 }
 
+# Multi-policy variant — caller supplies a pre-built policies JSON array.
+# Use when a child needs permissions across account + zone scopes (e.g. a
+# deploy token that writes scripts AND route mappings on one zone).
+rotate_multi() {
+  local name="$1" expires_on="$2" policies_json="$3"
+  local old_id
+  old_id="$(jq -r --arg n "$name" '.children[] | select(.name == $n) | .id' "$STATE_FILE" | head -n1)"
+  if [ -n "$old_id" ] && [ "$old_id" != "null" ]; then
+    revoke_child "$old_id"
+  fi
+  log "minting $name (multi-scope, expires $expires_on)"
+  local record value
+  record="$(mint_child_multi "$name" "$expires_on" "$policies_json")"
+  value="$(echo "$record" | jq -r .value)"
+  write_env "$name" "$value"
+  persist_child "$record"
+}
+
 # Zone-scoped variant — resource is a single zone id, not the account.
 rotate_zone() {
   local name="$1" expires_on="$2" zone_id="$3"
@@ -260,8 +286,19 @@ rotate_zone() {
   persist_child "$record"
 }
 
-rotate "whl-worker-deploy" "$EXP_90D" \
-  "$PG_WORKERS_SCRIPTS_WRITE" "$PG_ACCOUNT_SETTINGS_READ"
+# whl-worker-deploy spans two scopes:
+#   - account: Workers Scripts Write + Account Settings Read (script push, D1
+#     binding metadata, custom-domain attach API).
+#   - zone on jkca.me: Workers Routes Write (so wrangler deploy can reconcile
+#     route patterns and host-level worker bindings on this zone).
+# Without the zone half, wrangler can push a script but cannot wire it to a
+# hostname that uses Workers Routes semantics.
+_WD_POLICY_ACCT="$(policy_for "com.cloudflare.api.account.$ACCT" \
+  "$PG_WORKERS_SCRIPTS_WRITE" "$PG_ACCOUNT_SETTINGS_READ")"
+_WD_POLICY_ZONE="$(policy_for "com.cloudflare.api.account.zone.$ZONE_JKCA_ME" \
+  "$PG_WORKERS_ROUTES_WRITE")"
+rotate_multi "whl-worker-deploy" "$EXP_90D" "[$_WD_POLICY_ACCT,$_WD_POLICY_ZONE]"
+
 rotate "whl-d1-migrate" "$EXP_30D" \
   "$PG_D1_WRITE" "$PG_ACCOUNT_SETTINGS_READ"
 rotate_zone "whl-dns-manage" "$EXP_90D" "$ZONE_JKCA_ME" \
