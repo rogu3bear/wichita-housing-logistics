@@ -120,6 +120,8 @@ async function main() {
   await writeFile(
     join(workspaceRoot, "target/asset-hashes.env"),
     [
+      `export LEPTOS_OUTPUT_NAME="${outputName}"`,
+      `export LEPTOS_SITE_PKG_DIR="${leptos["site-pkg-dir"]}"`,
       `export LEPTOS_EDGE_JS_HASH="${jsHash}"`,
       `export LEPTOS_EDGE_WASM_HASH="${wasmHash}"`,
       `export LEPTOS_EDGE_CSS_HASH="${cssHash}"`,
