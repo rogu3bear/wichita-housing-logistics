@@ -39,8 +39,11 @@ rustup target add wasm32-unknown-unknown
 cargo install cargo-leptos --locked
 cargo install -f wasm-bindgen-cli --version 0.2.114   # pinned
 
-# Migrate local D1 and seed fixtures
+# Migrate local D1
 bunx wrangler d1 migrations apply wichita-housing-logistics-db --local
+
+# Optional: load reviewable fixtures into local D1 (never touches production)
+bash ./scripts/seed-local.sh
 
 # Type-check (fast)
 cargo check --features ssr
@@ -77,7 +80,9 @@ compiles the Leptos crate, hashes the client assets, and runs `worker-build
 ```text
 migrations/
   0001_init.sql          # households, housing_resources, placements, activity_notes
-  0002_seed.sql          # reviewable fixtures
+scripts/
+  seed-local.sh          # optional fixtures for local dev (never production)
+  seed-local.sql         # the fixture SQL — 3 households, 4 resources, 2 placements, 5 notes
 src/
   api.rs                 # shared wire types + #[server] fns
   app.rs                 # router with five routes
