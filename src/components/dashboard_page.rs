@@ -16,11 +16,12 @@ pub fn DashboardPage() -> impl IntoView {
                 title="Operations dashboard"
                 subtitle="Pipeline overview and the latest activity across Wichita housing logistics."
             />
-            {move || match snapshot.get() {
-                None => view! { <p class="loading">"Loading dashboard…"</p> }.into_any(),
-                Some(Err(error)) => view! { <ErrorBanner message=error.to_string()/> }.into_any(),
-                Some(Ok(data)) => view! { <DashboardBoard data=data/> }.into_any(),
-            }}
+            <Suspense fallback=|| view! { <p class="loading">"Loading dashboard…"</p> }>
+                {move || snapshot.get().map(|res| match res {
+                    Err(error) => view! { <ErrorBanner message=error.to_string()/> }.into_any(),
+                    Ok(data) => view! { <DashboardBoard data=data/> }.into_any(),
+                })}
+            </Suspense>
         </main>
     }
 }

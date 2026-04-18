@@ -31,22 +31,23 @@ pub fn CasePage() -> impl IntoView {
 
     view! {
         <main class="case-shell">
-            {move || match case.get() {
-                None => view! { <p class="loading">"Loading your case…"</p> }.into_any(),
-                Some(Err(err)) => view! {
-                    <section class="case-error" role="status">
-                        <h1>"We can't find that case."</h1>
-                        <p>{err.to_string()}</p>
-                        <p class="muted small">
-                            "If this link came from your case manager and it stopped working, "
-                            "send them a message and ask for a fresh one."
-                        </p>
-                    </section>
-                }.into_any(),
-                Some(Ok(data)) => view! {
-                    <CaseBody data=data token=token update_action=update_action/>
-                }.into_any(),
-            }}
+            <Suspense fallback=|| view! { <p class="loading">"Loading your case…"</p> }>
+                {move || case.get().map(|res| match res {
+                    Err(err) => view! {
+                        <section class="case-error" role="status">
+                            <h1>"We can't find that case."</h1>
+                            <p>{err.to_string()}</p>
+                            <p class="muted small">
+                                "If this link came from your case manager and it stopped working, "
+                                "send them a message and ask for a fresh one."
+                            </p>
+                        </section>
+                    }.into_any(),
+                    Ok(data) => view! {
+                        <CaseBody data=data token=token update_action=update_action/>
+                    }.into_any(),
+                })}
+            </Suspense>
         </main>
     }
 }

@@ -133,11 +133,12 @@ pub fn InventoryPage() -> impl IntoView {
                 </form>
             </section>
 
-            {move || match data.get() {
-                None => view! { <p class="loading">"Loading inventory…"</p> }.into_any(),
-                Some(Err(error)) => view! { <ErrorBanner message=error.to_string()/> }.into_any(),
-                Some(Ok(response)) => view! { <InventoryTable response=response status_action=status_action/> }.into_any(),
-            }}
+            <Suspense fallback=|| view! { <p class="loading">"Loading inventory…"</p> }>
+                {move || data.get().map(|res| match res {
+                    Err(error) => view! { <ErrorBanner message=error.to_string()/> }.into_any(),
+                    Ok(response) => view! { <InventoryTable response=response status_action=status_action/> }.into_any(),
+                })}
+            </Suspense>
         </main>
     }
 }
