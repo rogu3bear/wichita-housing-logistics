@@ -9,6 +9,13 @@ cd "$ROOT_DIR"
 # which revision is live. Falls back to "unknown" outside a git tree.
 export GIT_COMMIT_SHA="${GIT_COMMIT_SHA:-$(git -C "$ROOT_DIR" rev-parse --short HEAD 2>/dev/null || echo unknown)}"
 
+# Stable server-fn URLs. By default the #[server] macro appends an xxh64
+# of (CARGO_MANIFEST_DIR + module_path) to each route to disambiguate
+# cross-crate name collisions. We have one crate with unique fn names, so
+# the hash is pure friction — it makes curl tests brittle and obscures
+# the URL in logs. Strip it.
+export DISABLE_SERVER_FN_HASH=1
+
 cargo leptos build --release
 bun ./scripts/hash-assets.mjs
 source "$ROOT_DIR/target/asset-hashes.env"

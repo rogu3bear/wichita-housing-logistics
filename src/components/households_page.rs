@@ -170,6 +170,7 @@ fn HouseholdsTable(
                                     <th>"Size"</th>
                                     <th>"Contact"</th>
                                     <th>"Stage"</th>
+                                    <th>"Case link"</th>
                                     <th>"Updated"</th>
                                     <th></th>
                                 </tr>
@@ -200,6 +201,7 @@ fn HouseholdRow(
         email,
         stage,
         intake_notes,
+        share_token,
         updated_at,
         ..
     } = household;
@@ -240,6 +242,21 @@ fn HouseholdRow(
             <td class="muted">{contact}</td>
             <td>
                 <span class=pill_class>{stage_label}</span>
+            </td>
+            <td>
+                {share_token.map(|token| {
+                    let href = format!("/case/{token}");
+                    let short = token.chars().take(8).collect::<String>();
+                    view! {
+                        <a class="share-copy mono small"
+                           href=href.clone()
+                           target="_blank"
+                           rel="noopener"
+                           title=format!("Open {href} — share this URL with the household")>
+                            {short}
+                        </a>
+                    }
+                })}
             </td>
             <td class="muted mono small">{updated_at}</td>
             <td class="row-actions">

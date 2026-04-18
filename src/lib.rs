@@ -14,6 +14,7 @@ async fn fetch(
     env: worker::Env,
     _ctx: worker::Context,
 ) -> worker::Result<axum::http::Response<axum::body::Body>> {
+    use axum::routing::post;
     use axum::Router;
     use axum::http::{
         header::{
@@ -22,8 +23,13 @@ async fn fetch(
         },
     };
     use leptos::prelude::*;
-    use leptos_axum::{generate_route_list, LeptosRoutes};
+    use leptos_axum::{generate_route_list, handle_server_fns_with_context, LeptosRoutes};
     use tower_service::Service;
+
+    // wasm isolates don't support `inventory`-based auto-registration, so
+    // every #[server] fn must be wired by hand. Idempotent — cheap on warm
+    // isolates, required on cold ones.
+    crate::api::register_all();
 
     let conf =
         get_configuration(None).map_err(|error| worker::Error::RustError(error.to_string()))?;
@@ -31,7 +37,27 @@ async fn fetch(
     let routes = generate_route_list(app::App);
     let state = server::AppState::new(leptos_options.clone(), env);
 
+    // Server fns POST to `/api/<FnName>` from the browser. Without this
+    // route they silently 404, which means every ServerAction::dispatch
+    // from the client never reaches Rust — all admin mutations + the
+    // customer /case update form would be broken.
+    let state_for_fns = state.clone();
     let mut router = Router::new()
+        .route(
+            "/api/{*fn_name}",
+            post(move |req| {
+                let state = state_for_fns.clone();
+                async move {
+                    handle_server_fns_with_context(
+                        move || {
+                            leptos::prelude::provide_context(state.clone());
+                        },
+                        req,
+                    )
+                    .await
+                }
+            }),
+        )
         .leptos_routes_with_context(&state, routes, || {}, {
             let leptos_options = leptos_options.clone();
             move || app::shell(leptos_options.clone())
