@@ -5,7 +5,7 @@ use leptos_router::{
     StaticSegment,
 };
 
-use crate::components::todo_page::TodoPage;
+use crate::components::home_page::HomePage;
 
 #[allow(dead_code)]
 pub fn shell(options: LeptosOptions) -> impl IntoView {
@@ -33,15 +33,15 @@ pub fn App() -> impl IntoView {
     provide_meta_context();
 
     view! {
-        <Title text="Leptos CF Starter"/>
+        <Title text="Wichita Housing Logistics"/>
         <Meta
             name="description"
-            content="A full-stack Leptos starter for Cloudflare Workers with D1-backed todos."
+            content="Internal operations console for Wichita housing logistics: intake, assessment, placement, follow-up."
         />
 
         <Router>
             <Routes fallback=|| view! { <p class="route-miss">"Page not found."</p> }.into_view()>
-                <Route path=StaticSegment("") view=TodoPage/>
+                <Route path=StaticSegment("") view=HomePage/>
             </Routes>
         </Router>
     }

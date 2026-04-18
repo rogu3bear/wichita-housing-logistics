@@ -1,9 +1,9 @@
 [package]
-name = "leptos-cf"
+name = "wichita-housing-logistics"
 version = "0.1.2"
 edition = "2021"
 license = "MIT"
-description = "Single-crate Leptos starter for Cloudflare Workers with D1."
+description = "Internal operations app for Wichita housing logistics (Leptos + Cloudflare Workers + D1)."
 
 [profile.release]
 opt-level = "s"
@@ -44,7 +44,7 @@ ssr = [
 ]
 
 [package.metadata.leptos]
-output-name = "leptos-cf"
+output-name = "wichita-housing-logistics"
 site-root = "target/site"
 site-pkg-dir = "pkg"
 style-file = "style/main.css"
