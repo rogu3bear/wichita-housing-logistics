@@ -80,6 +80,42 @@ See `README.md` for the project layout. Key entry points:
 - `src/server/dashboard.rs` — composes the four entity modules
 - `migrations/` — the authoritative schema
 
+## Customer lane (/case/:token)
+
+**Security model: share-token-in-URL, pilot-level.** Every household gets a
+24-char hex `share_token` (12 random bytes generated SQL-side via
+`lower(hex(randomblob(12)))` on insert). The URL `/case/<token>` is both
+the address *and* the authentication — whoever has the URL can read the
+case page and post one-way updates back to the activity feed. There is
+no login, no cookie, no session.
+
+Invariants that make this safe for a pilot:
+- **Token entropy is 96 bits.** Brute-force is not a practical threat.
+- **`/case/*` responses carry tighter headers**: `Referrer-Policy:
+  no-referrer` so the token never leaks via Referer on external-link
+  clicks, and `X-Robots-Tag: noindex, nofollow, noarchive` so a
+  pasted-in-public URL doesn't get indexed.
+- **Input shape is locked**: `normalize_share_token` rejects anything
+  that isn't exactly 24 lowercase hex chars before hitting D1, so
+  malformed probes don't burn subrequests.
+- **Rotation exists**: admin roster has a per-row "New" button that
+  calls `rotate_share_token(id)` and regenerates the token.
+  Compromised link → regenerate, old URL stops working immediately.
+- **Household writes are one-way**: the only mutation a token-holder
+  can perform is `submit_household_update` which inserts an
+  `activity_notes` row with `author='household'`. No stage transitions,
+  no placements, no reads of other households.
+
+Known limits (upgrade before piloting outside a trust circle):
+- No rate limiting on `case_view` or `submit_household_update`. Add a
+  CF zone rule or a DO counter before general availability.
+- Tokens appear in Worker observability logs (Cloudflare captures
+  request URLs). Redaction is a follow-up.
+- No audit of IP / UA on household-submitted updates. Intentional
+  (privacy), but also means we can't detect abuse before it's done.
+- No way for a household to *read* the token back from the case page —
+  if they lose the URL, the admin has to rotate and re-share.
+
 ## Anti-goals
 
 Explicitly out-of-scope until the MVP is in users' hands:
