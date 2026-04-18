@@ -1,6 +1,6 @@
 name = "wichita-housing-logistics"
 main = "build/index.js"
-compatibility_date = "2026-03-20"
+compatibility_date = "2026-04-18"
 
 [build]
 command = "bash ./scripts/build-edge.sh"
@@ -8,9 +8,12 @@ command = "bash ./scripts/build-edge.sh"
 [assets]
 directory = "./target/site"
 
+[observability]
+enabled = true
+
 [[d1_databases]]
 binding = "DB"
 database_name = "wichita-housing-logistics-db"
-database_id = "00000000-0000-0000-0000-000000000000"
-preview_database_id = "00000000-0000-0000-0000-000000000000"
+database_id = "29c3ccfd-b580-4079-8a98-94c94c223c0a"
+preview_database_id = "29c3ccfd-b580-4079-8a98-94c94c223c0a"
 migrations_dir = "migrations"
