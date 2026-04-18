@@ -31,9 +31,20 @@ async fn fetch(
         })
         .with_state(state);
 
+    let method = req.method().clone();
     let mut response = router.call(req).await?;
     let headers = response.headers_mut();
-    headers.insert(CACHE_CONTROL, HeaderValue::from_static("no-store"));
+
+    // GET/HEAD render HTML — revalidate on every nav but keep bfcache.
+    // Everything else (server-fn POSTs) must never cache.
+    // `http::Method` is a newtype over a private enum, so it isn't a valid
+    // const-pattern in a match arm — use equality comparison instead.
+    let cache_value = if method == axum::http::Method::GET || method == axum::http::Method::HEAD {
+        "private, no-cache"
+    } else {
+        "no-store"
+    };
+    headers.insert(CACHE_CONTROL, HeaderValue::from_static(cache_value));
     headers.insert(
         X_CONTENT_TYPE_OPTIONS,
         HeaderValue::from_static("nosniff"),
