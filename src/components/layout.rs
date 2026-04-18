@@ -42,6 +42,19 @@ pub fn ErrorBanner(message: String) -> impl IntoView {
 }
 
 #[component]
+pub fn EmptyState(
+    #[prop(into)] title: String,
+    #[prop(into)] body: String,
+) -> impl IntoView {
+    view! {
+        <div class="empty-state">
+            <span class="empty-state-title">{title}</span>
+            <p>{body}</p>
+        </div>
+    }
+}
+
+#[component]
 pub fn BuildFooter() -> impl IntoView {
     let version = crate::build_info::VERSION;
     let sha = crate::build_info::COMMIT_SHA;
@@ -57,6 +70,20 @@ pub fn BuildFooter() -> impl IntoView {
             </a>
         </footer>
     }
+}
+
+/// Pill class for an activity entity type. `placement` gets the `-entity`
+/// suffix so the color doesn't collide with the `placement` *stage* pill.
+pub fn entity_pill_class(entity_type: &str) -> String {
+    match entity_type {
+        "placement" => "pill pill--placement-entity".to_string(),
+        other => format!("pill pill--{other}"),
+    }
+}
+
+/// Pill class for a household stage or placement/resource status token.
+pub fn status_pill_class(token: &str) -> String {
+    format!("pill pill--{token}")
 }
 
 pub fn humanize(value: &str) -> String {
