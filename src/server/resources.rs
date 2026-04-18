@@ -52,7 +52,8 @@ pub async fn list_resources() -> AppResult<ResourcesResponse> {
                     strftime('%Y-%m-%d %H:%M UTC', created_at) AS created_at,
                     strftime('%Y-%m-%d %H:%M UTC', updated_at) AS updated_at
              FROM housing_resources
-             ORDER BY id DESC",
+             ORDER BY id DESC
+             LIMIT 500",
         )
         .all()
         .await

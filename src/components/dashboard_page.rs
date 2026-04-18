@@ -100,7 +100,7 @@ fn DashboardBoard(data: DashboardSnapshot) -> impl IntoView {
 }
 
 #[component]
-fn MetricCard(#[prop(into)] label: String, value: usize) -> impl IntoView {
+fn MetricCard(#[prop(into)] label: String, value: u32) -> impl IntoView {
     view! {
         <article class="metric-card">
             <span class="metric-label">{label}</span>

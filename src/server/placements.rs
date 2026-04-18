@@ -53,7 +53,7 @@ const LIST_SQL: &str = "SELECT p.id, p.household_id, p.resource_id,
 pub async fn list_placements() -> AppResult<PlacementsResponse> {
     let db = database()?;
     let result = db
-        .prepare(&format!("{LIST_SQL} ORDER BY p.id DESC"))
+        .prepare(&format!("{LIST_SQL} ORDER BY p.id DESC LIMIT 500"))
         .all()
         .await
         .map_err(|e| d1_error("Failed to list placements.", e))?;
