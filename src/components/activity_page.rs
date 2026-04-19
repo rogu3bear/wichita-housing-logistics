@@ -2,7 +2,7 @@ use leptos::{ev::SubmitEvent, prelude::*};
 
 use crate::api::{list_activity, ActivityNote, CreateNote};
 use crate::components::layout::{
-    entity_pill_class, humanize, EmptyState, ErrorBanner, PageHeader, TopNav,
+    entity_pill_class, humanize, EmptyState, ErrorBanner, PageHeader, RequiredMark, TopNav,
 };
 
 const ENTITIES: &[&str] = &["household", "resource", "placement", "system"];
@@ -111,13 +111,13 @@ pub fn ActivityPage() -> impl IntoView {
                             on:input=move |ev| entity_id.set(event_target_value(&ev))/>
                     </div>
                     <div class="form-row form-row--span-6">
-                        <label for="ac-author">"Author"</label>
+                        <label for="ac-author">"Author"<RequiredMark/></label>
                         <input id="ac-author" type="text" required placeholder="case_manager_kim"
                             prop:value=move || author.get()
                             on:input=move |ev| author.set(event_target_value(&ev))/>
                     </div>
                     <div class="form-row form-row--wide">
-                        <label for="ac-body">"Note"</label>
+                        <label for="ac-body">"Note"<RequiredMark/></label>
                         <textarea id="ac-body" rows="2" required
                             placeholder="What happened — be specific and dateable."
                             prop:value=move || body.get()
@@ -173,7 +173,7 @@ fn ActivityFeed(notes: Vec<ActivityNote>) -> impl IntoView {
                                         <time>{note.created_at.clone()}</time>
                                     </div>
                                     <p class="activity-body">{note.body.clone()}</p>
-                                    <p class="activity-author">{"— "}{note.author.clone()}</p>
+                                    <p class="activity-author">{"— "}{humanize(&note.author)}</p>
                                 </li>
                             }
                         }).collect::<Vec<_>>()}

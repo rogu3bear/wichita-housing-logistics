@@ -213,12 +213,14 @@ PG_D1_WRITE="$(pg_id 'D1 Write')"
 PG_WORKERS_SCRIPTS_WRITE="$(pg_id 'Workers Scripts Write')"
 PG_WORKERS_ROUTES_WRITE="$(pg_id 'Workers Routes Write')"
 PG_DNS_WRITE="$(pg_id 'DNS Write')"
+PG_PAGES_WRITE="$(pg_id 'Pages Write')"
 
 [ -n "$PG_ACCOUNT_SETTINGS_READ" ]   || die "could not resolve 'Account Settings Read' permission-group"
 [ -n "$PG_D1_WRITE" ]                || die "could not resolve 'D1 Write' permission-group"
 [ -n "$PG_WORKERS_SCRIPTS_WRITE" ]   || die "could not resolve 'Workers Scripts Write' permission-group"
 [ -n "$PG_WORKERS_ROUTES_WRITE" ]    || die "could not resolve 'Workers Routes Write' permission-group"
 [ -n "$PG_DNS_WRITE" ]               || die "could not resolve 'DNS Write' permission-group"
+[ -n "$PG_PAGES_WRITE" ]             || die "could not resolve 'Pages Write' permission-group"
 
 # Zones this repo operates on. Add more as subdomains/surfaces grow.
 ZONE_JKCA_ME="08e87b3b4b8c0ef0181abfa87499437b"
@@ -303,8 +305,11 @@ rotate "whl-d1-migrate" "$EXP_30D" \
   "$PG_D1_WRITE" "$PG_ACCOUNT_SETTINGS_READ"
 rotate_zone "whl-dns-manage" "$EXP_90D" "$ZONE_JKCA_ME" \
   "$PG_DNS_WRITE"
+rotate "whl-pages-deploy" "$EXP_90D" \
+  "$PG_PAGES_WRITE" "$PG_ACCOUNT_SETTINGS_READ"
 
 log "rotation complete"
 log "source .cf-tokens.local/whl-worker-deploy.env for deploys"
 log "source .cf-tokens.local/whl-d1-migrate.env   for D1 migrate/create"
 log "source .cf-tokens.local/whl-dns-manage.env   for DNS record management on jkca.me"
+log "source .cf-tokens.local/whl-pages-deploy.env for Pages static site publishing"

@@ -1,5 +1,13 @@
 # Wichita Housing Logistics
 
+> **Public archive — Groover Labs competition submission (April 2026).**
+> This repository is frozen as the submission snapshot. The landing page
+> lives at <https://wichita-housing-logistics-archive.pages.dev/>; the
+> live demo is still running at
+> <https://wichita-housing-logistics.sp5qybrsvz.workers.dev/> with seeded
+> fictional data. The old `groover.jkca.me` hostname has been
+> disconnected. No PRs, issues, or further changes will be accepted.
+
 Internal operations web app for coordinating housing logistics in Wichita.
 Case managers, providers, and admins track households through the pipeline:
 

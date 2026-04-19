@@ -1,5 +1,6 @@
-use leptos::prelude::*;
+use leptos::{ev::SubmitEvent, prelude::*};
 
+use crate::api::{get_sitrep, SetSitrep, Sitrep};
 use crate::components::layout::{PageHeader, TopNav};
 
 /// `/situational` — the ops view of active stress events.
@@ -21,6 +22,8 @@ pub fn SituationalPage() -> impl IntoView {
                 subtitle="Live view of stress events affecting intake capacity, placement throughput, and access costs. Routing rules auto-adjust while the sitrep banner is up."
             />
 
+            <SitrepControl/>
+
             <div class="sit-grid">
                 <div class="sit-col">
                     <ActiveEvents/>
@@ -32,6 +35,160 @@ pub fn SituationalPage() -> impl IntoView {
                 </aside>
             </div>
         </main>
+    }
+}
+
+#[component]
+fn SitrepControl() -> impl IntoView {
+    let set_action = ServerAction::<SetSitrep>::new();
+    let sitrep = Resource::new(
+        move || set_action.version().get(),
+        |_| async move { get_sitrep().await },
+    );
+
+    view! {
+        <Suspense fallback=|| view! { <p class="loading">"Loading sitrep control…"</p> }>
+            {move || sitrep.get().map(|res| match res {
+                Err(err) => view! {
+                    <section class="panel">
+                        <div class="feedback feedback--error" role="status">
+                            {err.to_string()}
+                        </div>
+                    </section>
+                }.into_any(),
+                Ok(current) => view! {
+                    <SitrepForm current=current set_action=set_action/>
+                }.into_any(),
+            })}
+        </Suspense>
+    }
+}
+
+#[component]
+fn SitrepForm(current: Sitrep, set_action: ServerAction<SetSitrep>) -> impl IntoView {
+    let active = RwSignal::new(current.active);
+    let summary = RwSignal::new(current.summary.clone());
+    let level = RwSignal::new(current.level.clone());
+    let updated_by = RwSignal::new(crate::operator::load().unwrap_or_default());
+    let form_error = RwSignal::new(None::<String>);
+
+    Effect::new(move |_| {
+        if let Some(Ok(_)) = set_action.value().get() {
+            crate::operator::save(&updated_by.get_untracked());
+            form_error.set(None);
+        }
+    });
+
+    let server_error = move || {
+        set_action
+            .value()
+            .get()
+            .and_then(|r| r.err().map(|e| e.to_string()))
+    };
+
+    let on_submit = move |ev: SubmitEvent| {
+        ev.prevent_default();
+        let summary_v = summary.get_untracked().trim().to_string();
+        if active.get_untracked() && summary_v.is_empty() {
+            form_error.set(Some(
+                "Write a one-line summary before activating — the banner needs a message.".into(),
+            ));
+            return;
+        }
+        form_error.set(None);
+        set_action.dispatch(SetSitrep {
+            active: active.get_untracked(),
+            summary: summary_v,
+            level: level.get_untracked(),
+            updated_by: updated_by.get_untracked(),
+        });
+    };
+
+    let was_active = current.active;
+    let status_line = {
+        let updated_at = current.updated_at.clone();
+        let updated_by_prev = current.updated_by.clone();
+        let started_at = current.started_at.clone();
+        move || {
+            let mut bits: Vec<String> = Vec::new();
+            if was_active {
+                if let Some(started) = started_at.as_ref() {
+                    bits.push(format!("active since {started}"));
+                }
+            } else {
+                bits.push("inactive".to_string());
+            }
+            bits.push(format!("last change {updated_at}"));
+            if let Some(by) = updated_by_prev.as_ref() {
+                bits.push(format!("by {by}"));
+            }
+            bits.join(" · ")
+        }
+    };
+
+    view! {
+        <section class="panel">
+            <div class="panel-head">
+                <div>
+                    <h2>"Sitrep control"</h2>
+                    <p>"Toggle the red banner above every page. Every operator sees the change on the next page load."</p>
+                </div>
+                <span class="muted small">{status_line}</span>
+            </div>
+
+            <Show when=move || form_error.get().is_some() || server_error().is_some()>
+                <div class="feedback feedback--error" role="status">
+                    {move || form_error.get().or_else(server_error).unwrap_or_default()}
+                </div>
+            </Show>
+            <Show when=move || matches!(set_action.value().get(), Some(Ok(_)))>
+                <div class="feedback feedback--success" role="status">
+                    "Saved. Banner reflects the new state on the next page load."
+                </div>
+            </Show>
+
+            <form class="form-grid" on:submit=on_submit>
+                <div class="form-row form-row--span-4">
+                    <label for="sit-active">"State"</label>
+                    <select id="sit-active"
+                        prop:value=move || if active.get() { "on" } else { "off" }
+                        on:change=move |ev| active.set(event_target_value(&ev) == "on")>
+                        <option value="off">"Off — no banner"</option>
+                        <option value="on">"On — banner visible"</option>
+                    </select>
+                </div>
+                <div class="form-row form-row--span-4">
+                    <label for="sit-level">"Level"</label>
+                    <select id="sit-level"
+                        prop:value=move || level.get()
+                        on:change=move |ev| level.set(event_target_value(&ev))>
+                        <option value="warn">"Warn — single-system issue"</option>
+                        <option value="red">"Red — cascading crisis"</option>
+                    </select>
+                </div>
+                <div class="form-row form-row--span-4">
+                    <label for="sit-by">"Your handle"</label>
+                    <input id="sit-by" type="text" placeholder="case_manager_kim"
+                        prop:value=move || updated_by.get()
+                        on:input=move |ev| updated_by.set(event_target_value(&ev))/>
+                    <p class="form-hint">"Recorded on the change. Remembered from /activity if you've posted there."</p>
+                </div>
+                <div class="form-row form-row--wide">
+                    <label for="sit-summary">"Summary"</label>
+                    <textarea id="sit-summary" rows="2" maxlength="240"
+                        placeholder="e.g. Red Cross activation · Open Door offline · CrossRoads 1/12 beds"
+                        prop:value=move || summary.get()
+                        on:input=move |ev| summary.set(event_target_value(&ev))/>
+                    <p class="form-hint">"240-char cap. This is the whole point of the banner — narrate."</p>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="primary"
+                        disabled=move || set_action.pending().get()>
+                        {move || if set_action.pending().get() { "Saving…" } else { "Save sitrep" }}
+                    </button>
+                </div>
+            </form>
+        </section>
     }
 }
 

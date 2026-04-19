@@ -3,6 +3,7 @@ pub mod dashboard;
 pub mod households;
 pub mod placements;
 pub mod resources;
+pub mod sitrep;
 pub mod state;
 
 pub use state::AppState;

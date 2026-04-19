@@ -448,13 +448,25 @@ time,
   gap: 4px;
 }
 
-/* Required marker from HTML `required` attr — no markup change needed */
-.form-row:has(> :is(input, select, textarea)[required]) > label::after {
-  content: "*";
+/* Required marker — rendered explicitly by the <RequiredMark/> component
+   so we don't depend on :has() and so spacing is consistent across labels */
+.required-mark {
+  margin-left: 3px;
   color: var(--danger);
   font-weight: 600;
   line-height: 1;
 }
+
+/* Stacked-metadata cell: primary strong name + inline id chip on one row,
+   so "#5" reads as secondary metadata instead of appearing to be its own
+   sibling column */
+.cell-title {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+}
+.cell-title .id-chip { font-weight: 400; }
 
 .form-hint { font-size: 0.82rem; color: var(--ink-muted); margin: 0; }
 .form-hint--error { color: var(--danger-ink); }

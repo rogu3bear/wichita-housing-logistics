@@ -3,6 +3,21 @@ use serde::{Deserialize, Serialize};
 
 // --- Shared wire types ---------------------------------------------------
 
+/// Live sitrep (situational-report) state. Single row in D1 — whoever
+/// has the console open sees the current value; flipping `active` flips
+/// the banner for everyone.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct Sitrep {
+    pub active: bool,
+    pub summary: String,
+    /// One of: warn | red. `red` is for crisis with cascading effects;
+    /// `warn` for a single-system issue worth pre-announcing.
+    pub level: String,
+    pub started_at: Option<String>,
+    pub updated_at: String,
+    pub updated_by: Option<String>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Household {
     pub id: i64,
@@ -219,6 +234,21 @@ pub async fn rotate_share_token(id: i64) -> Result<String, ServerFnError> {
     ssr_call!(crate::server::households::rotate_share_token(id).await)
 }
 
+#[server(GetSitrep)]
+pub async fn get_sitrep() -> Result<Sitrep, ServerFnError> {
+    ssr_call!(crate::server::sitrep::get_sitrep().await)
+}
+
+#[server(SetSitrep)]
+pub async fn set_sitrep(
+    active: bool,
+    summary: String,
+    level: String,
+    updated_by: String,
+) -> Result<Sitrep, ServerFnError> {
+    ssr_call!(crate::server::sitrep::set_sitrep(active, summary, level, updated_by).await)
+}
+
 #[server(ListResources)]
 pub async fn list_resources() -> Result<ResourcesResponse, ServerFnError> {
     ssr_call!(crate::server::resources::list_resources().await)
@@ -298,6 +328,8 @@ pub fn register_all() {
     register_explicit::<CaseViewFn>();
     register_explicit::<SubmitHouseholdUpdate>();
     register_explicit::<RotateShareToken>();
+    register_explicit::<GetSitrep>();
+    register_explicit::<SetSitrep>();
     register_explicit::<ListResources>();
     register_explicit::<CreateResource>();
     register_explicit::<SetResourceStatus>();

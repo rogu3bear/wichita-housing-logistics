@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Wichita Housing Logistics — Groover Labs competition archive</title>
+  <meta name="description" content="Wichita Housing Logistics — a lightweight intake/assessment/placement/follow-up coordination tool for housing case managers. Groover Labs competition submission, public archive.">
+  <meta name="robots" content="index,follow">
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <main class="page">
+    <header class="hero">
+      <p class="eyebrow">Public archive</p>
+      <h1>Wichita Housing Logistics</h1>
+      <p class="sub">
+        An internal operations app for housing case managers —
+        Intake &rarr; Assessment &rarr; Placement &rarr; Follow-up.
+        Built as a competition submission for Groover Labs.
+      </p>
+      <p class="stamp">
+        Submission snapshot &middot; archived April 2026.
+      </p>
+    </header>
+
+    <section class="panel">
+      <h2>What it replaces</h2>
+      <p>
+        A case manager in Wichita tracks fifteen households on a legal pad,
+        a shared Google Sheet that nobody trusts, and a group text with
+        three coordinators. When a landlord calls asking "did the family
+        get the keys?" nobody can answer without a round of "let me check
+        and call you back." Beds sit empty because the person holding them
+        didn't tell the person doing assessments. Families fall out of
+        follow-up because there's no view that says "moved in 14 days ago,
+        check on them."
+      </p>
+    </section>
+
+    <section class="panel">
+      <h2>What it is</h2>
+      <p>
+        One URL. Four stages with real counters and a live activity feed.
+        Add a household, assign a bed, post a note. That is the whole app.
+        No accounts to provision, no implementation consultant, no
+        quarterly product roadmap. It runs on Cloudflare's edge with a
+        single database; hosting cost is pocket change.
+      </p>
+      <ul class="kv">
+        <li><span>Stack</span><span>Rust + Leptos 0.8 (SSR + hydration) on Cloudflare Workers, D1 for persistence</span></li>
+        <li><span>Size</span><span>Single crate, ~3,500 lines. Four tables. One migration path.</span></li>
+        <li><span>Posture</span><span>No login. No AI matching. No maps. No vendor contract.</span></li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>The one novel piece</h2>
+      <p>
+        Every household carries a private <code>share_token</code>. The URL
+        <code>/case/&lt;token&gt;</code> is both the address and the
+        authentication &mdash; whoever holds the link reads their own case
+        in plain language ("you're moved in," "we're holding a spot for
+        you") and sends messages back to the case team. No app install.
+        No password reset. No portal. The relationship changes when the
+        family can see what the case manager sees.
+      </p>
+      <p class="muted small">
+        Pilot-scope tradeoffs (rate limiting, log redaction, recovery flow)
+        are documented in the repository's CLAUDE.md under "Customer lane".
+      </p>
+    </section>
+
+    <section class="panel">
+      <h2>What's in the box</h2>
+      <ul class="tick">
+        <li>Intake, assessment, placement, follow-up pages with inline stage transitions.</li>
+        <li>Housing inventory with kind + status (shelter bed, transitional, PSH, rental, offline).</li>
+        <li>Placement lifecycle: proposed &rarr; confirmed &rarr; moved-in &rarr; exited / cancelled.</li>
+        <li>Activity feed with typed entities, author attribution, household-authored entries.</li>
+        <li>Per-household share-token case page with rotation + clipboard copy from the admin roster.</li>
+        <li>Security headers baked at the edge: CSP, HSTS, X-Frame-Options, tightened Referrer-Policy and noindex on customer pages.</li>
+        <li>CI verifies both build configurations (SSR + hydrate) on every push.</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>See it</h2>
+      <ul class="links">
+        <li>
+          <a href="https://wichita-housing-logistics.sp5qybrsvz.workers.dev/" rel="noopener" target="_blank">
+            Live demo &rarr;
+          </a>
+          <span class="muted small">
+            Ten fictional households, eight inventory units, a
+            week-and-a-half of seeded activity. Poke around &mdash; no
+            login, no account.
+          </span>
+        </li>
+        <li>
+          <a href="https://github.com/rogu3bear/wichita-housing-logistics" rel="noopener" target="_blank">
+            GitHub repository &rarr;
+          </a>
+          <span class="muted small">
+            Public archive. Code, migrations, CLAUDE.md with the full
+            architecture / security / pilot-scope notes.
+          </span>
+        </li>
+      </ul>
+    </section>
+
+    <footer class="foot">
+      <p class="muted small">
+        Submission by James KC Auchterlonie. Archived April 2026.
+        Fictional demo data only &mdash; no PII involved in this archive.
+      </p>
+    </footer>
+  </main>
+</body>
+</html>
