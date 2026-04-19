@@ -2,20 +2,9 @@ name = "wichita-housing-logistics"
 main = "build/index.js"
 compatibility_date = "2026-04-18"
 
-# Keep the workers.dev URL live alongside the custom domain so SSL/DNS
-# propagation on groover.jkca.me doesn't leave us without a usable URL.
+# Demo lives on workers.dev only — no custom domain. groover.jkca.me was
+# intentionally disconnected when the project was archived.
 workers_dev = true
-
-# Two route entries, intentionally:
-#   1. custom_domain — attaches groover.jkca.me to this worker with a
-#      dedicated cert and isolates it from other workers on the zone.
-#   2. pattern route on groover.jkca.me/* — overrides the zone-wide
-#      wildcard `*.jkca.me/*` route (bound to jkca-web-edge-router) that
-#      would otherwise shadow the custom domain and 404 on unknown hosts.
-routes = [
-  { pattern = "groover.jkca.me", custom_domain = true },
-  { pattern = "groover.jkca.me/*", zone_name = "jkca.me" }
-]
 
 [build]
 command = "bash ./scripts/build-edge.sh"
