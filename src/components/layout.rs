@@ -109,12 +109,18 @@ pub fn BuildFooter() -> impl IntoView {
 
     view! {
         <footer class="build-footer">
-            <span class="build-id">
-                "v" {version} " · " {sha}
+            <span class="build-credit">
+                "Built by "
+                <span class="build-credit-name">"James KC Auchterlonie"</span>
+                <span class="build-credit-sep" aria-hidden="true"></span>
+                <span class="build-credit-tag">"MLNavigator"</span>
+                <span class="build-credit-sep" aria-hidden="true"></span>
+                <span class="build-credit-tag">"adapterOS"</span>
             </span>
-            <a class="build-feedback" href=feedback_href>
-                "Report an issue"
-            </a>
+            <span class="build-meta">
+                <span class="build-id">"v" {version} " · " {sha}</span>
+                <a class="build-feedback" href=feedback_href>"Report an issue"</a>
+            </span>
         </footer>
     }
 }
